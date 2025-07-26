@@ -8,6 +8,9 @@
     },
     {
       "path": "./apps/tracker-electron"
+    },
+    {
+      "path": "./apps/tracker-app"
     }
   ]
 }
