@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openUrl: (url: string) => ipcRenderer.invoke('open-url', url),
+  openUrl: (url: string) => {
+    ipcRenderer.invoke('open-url', url);
+  },
 });
 
 declare global {

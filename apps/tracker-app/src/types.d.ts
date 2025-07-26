@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    electronAPI?: {
+    electronAPI: {
       openUrl: (url: string) => Promise<{ success: boolean; error?: string }>;
     };
   }
