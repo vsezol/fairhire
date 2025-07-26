@@ -1,5 +1,29 @@
 {
   "name": "@anticheat-interview/tracker-app",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/vite:build",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "outputPath": "apps/tracker-app/dist"
+        },
+        "configurations": {
+          "development": {
+            "sourcemap": true,
+            "declaration": true,
+            "mode": "development"
+          },
+          "production": {
+            "mode": "production"
+          }
+        }
+      }
+    }
+  }
 }

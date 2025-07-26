@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, shell, session } from 'electron';
 import * as path from 'path';
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
 let mainWindow: BrowserWindow;
 let browserWindow: BrowserWindow | null = null;
 
@@ -12,17 +14,15 @@ function createMainWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
+      // devTools: false, // TODO for PROD
     },
     resizable: false,
     maximizable: false,
     title: 'AntiCheat Interview',
   });
 
-  mainWindow.loadFile(path.join(__dirname, '../src/renderer/index.html'));
-
-  if (process.argv.includes('--dev')) {
-    mainWindow.webContents.openDevTools();
-  }
+  const appPath = path.join(__dirname, '../../tracker-app/dist/index.html');
+  mainWindow.loadFile(appPath);
 
   mainWindow.on('closed', () => {
     if (browserWindow) {
@@ -30,6 +30,29 @@ function createMainWindow(): void {
     }
     app.quit();
   });
+
+  // Handle page load errors
+  mainWindow.webContents.on(
+    'did-fail-load',
+    (event, errorCode, errorDescription, validatedURL) => {
+      console.log(
+        'Main window failed to load:',
+        errorCode,
+        errorDescription,
+        validatedURL
+      );
+
+      // In development, if Vite server is not running, show error
+      if (
+        process.env.NODE_ENV === 'development' &&
+        validatedURL.includes('localhost:4200')
+      ) {
+        console.log(
+          'Make sure the tracker-app dev server is running on port 4200'
+        );
+      }
+    }
+  );
 }
 
 function createBrowserWindow(url: string): void {

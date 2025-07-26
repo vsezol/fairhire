@@ -2,6 +2,7 @@
   "name": "@anticheat-interview/tracker-electron",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "nx": {
     "targets": {
       "build": {
@@ -10,60 +11,56 @@
           "{options.outputPath}"
         ],
         "defaultConfiguration": "production",
+        "dependsOn": [
+          "@anticheat-interview/tracker-app:build"
+        ],
         "options": {
           "platform": "node",
           "outputPath": "apps/tracker-electron/dist",
-          "format": [
-            "cjs"
-          ],
           "bundle": false,
           "main": "apps/tracker-electron/src/main.ts",
           "tsConfig": "apps/tracker-electron/tsconfig.app.json",
           "assets": [
             "apps/tracker-electron/src/assets"
           ],
-          "esbuildOptions": {
-            "sourcemap": true,
-            "outExtension": {
-              ".js": ".js"
-            }
-          }
+          "sourcemap": true
         },
         "configurations": {
-          "development": {},
+          "development": {
+            "define": {
+              "process.env.NODE_ENV": "\"development\""
+            }
+          },
           "production": {
-            "esbuildOptions": {
-              "sourcemap": false,
-              "outExtension": {
-                ".js": ".js"
-              }
+            "sourcemap": false,
+            "declaration": false,
+            "define": {
+              "process.env.NODE_ENV": "\"production\""
             }
           }
         }
       },
       "serve": {
-        "continuous": true,
-        "executor": "@nx/js:node",
+        "executor": "nx:run-commands",
         "defaultConfiguration": "development",
         "dependsOn": [
           "build"
         ],
         "options": {
-          "buildTarget": "@anticheat-interview/tracker-electron:build",
-          "runBuildTargetDependencies": false
+          "parallel": false,
+          "cwd": "{workspaceRoot}"
         },
         "configurations": {
           "development": {
-            "buildTarget": "@anticheat-interview/tracker-electron:build:development"
+            "commands": [
+              "electron apps/tracker-electron/dist/main.js --dev"
+            ]
           },
           "production": {
-            "buildTarget": "@anticheat-interview/tracker-electron:build:production"
+            "commands": [
+              "electron apps/tracker-electron/dist/main.js"
+            ]
           }
-        }
-      },
-      "test": {
-        "options": {
-          "passWithNoTests": true
         }
       }
     }

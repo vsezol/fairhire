@@ -1,7 +1,7 @@
 // DOM elements
-const urlInput = document.getElementById("urlInput") as HTMLInputElement;
-const openBtn = document.getElementById("openBtn") as HTMLButtonElement;
-const errorDiv = document.getElementById("error") as HTMLDivElement;
+const urlInput = document.getElementById('urlInput') as HTMLInputElement;
+const openBtn = document.getElementById('openBtn') as HTMLButtonElement;
+const errorDiv = document.getElementById('error') as HTMLDivElement;
 
 // URL validation patterns for different platforms
 const urlPatterns = {
@@ -17,19 +17,19 @@ const urlPatterns = {
 
 function showError(message: string): void {
   errorDiv.textContent = message;
-  errorDiv.classList.remove("hidden");
+  errorDiv.classList.remove('hidden');
   setTimeout(() => {
-    errorDiv.classList.add("hidden");
+    errorDiv.classList.add('hidden');
   }, 5000);
 }
 
 function hideError(): void {
-  errorDiv.classList.add("hidden");
+  errorDiv.classList.add('hidden');
 }
 
 function validateUrl(url: string): boolean {
   if (!url.trim()) {
-    showError("Please enter a URL");
+    showError('Please enter a URL');
     return false;
   }
 
@@ -37,7 +37,7 @@ function validateUrl(url: string): boolean {
   try {
     new URL(url);
   } catch {
-    showError("Please enter a valid URL");
+    showError('Please enter a valid URL');
     return false;
   }
 
@@ -59,12 +59,12 @@ function validateUrl(url: string): boolean {
 function setLoading(loading: boolean): void {
   if (loading) {
     openBtn.disabled = true;
-    openBtn.textContent = "Opening...";
-    document.body.classList.add("loading");
+    openBtn.textContent = 'Opening...';
+    document.body.classList.add('loading');
   } else {
     openBtn.disabled = false;
-    openBtn.textContent = "Open";
-    document.body.classList.remove("loading");
+    openBtn.textContent = 'Open';
+    document.body.classList.remove('loading');
   }
 }
 
@@ -79,47 +79,55 @@ async function openUrl(): Promise<void> {
   setLoading(true);
 
   try {
-    const result = await window.electronAPI.openUrl(url);
+    // Check if we're running in Electron
+    if (window.electronAPI) {
+      const result = await window.electronAPI.openUrl(url);
 
-    if (result.success) {
-      // Clear input on success
-      urlInput.value = "";
-      console.log("URL opened successfully");
+      if (result.success) {
+        // Clear input on success
+        urlInput.value = '';
+        console.log('URL opened successfully');
+      } else {
+        showError(result.error || 'Failed to open URL');
+      }
     } else {
-      showError(result.error || "Failed to open URL");
+      // Running in browser - open in new tab
+      window.open(url, '_blank');
+      urlInput.value = '';
+      console.log('URL opened in new tab');
     }
   } catch (error) {
-    console.error("Error opening URL:", error);
-    showError("An error occurred while opening the URL");
+    console.error('Error opening URL:', error);
+    showError('An error occurred while opening the URL');
   } finally {
     setLoading(false);
   }
 }
 
 // Event listeners
-openBtn.addEventListener("click", openUrl);
+openBtn.addEventListener('click', openUrl);
 
-urlInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
+urlInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
     openUrl();
   }
 });
 
-urlInput.addEventListener("input", () => {
+urlInput.addEventListener('input', () => {
   hideError();
 });
 
 // Auto-format URLs
-urlInput.addEventListener("blur", () => {
+urlInput.addEventListener('blur', () => {
   const url = urlInput.value.trim();
-  if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-    urlInput.value = "https://" + url;
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    urlInput.value = 'https://' + url;
   }
 });
 
 // Focus input on load
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener('DOMContentLoaded', () => {
   urlInput.focus();
 });
 
-console.log("Video Call Browser renderer loaded");
+console.log('Video Call Browser renderer loaded');

@@ -1,1 +1,4 @@
-import './app/app.element';
+import './styles.css';
+import './renderer';
+
+console.log('Tracker app loaded');
