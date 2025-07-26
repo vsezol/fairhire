@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell, session } from 'electron';
-import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let mainWindow: BrowserWindow;
 let browserWindow: BrowserWindow | null = null;
@@ -13,7 +15,8 @@ function createMainWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      sandbox: false, // Необходимо для ES modules в preload
+      preload: join(__dirname, 'preload.js'), // Изменено на .mjs
       // devTools: false, // TODO for PROD
     },
     resizable: false,
@@ -21,7 +24,7 @@ function createMainWindow(): void {
     title: 'AntiCheat Interview',
   });
 
-  const appPath = path.join(__dirname, '../../tracker-app/dist/index.html');
+  const appPath = join(__dirname, '../../tracker-app/dist/index.html');
   mainWindow.loadFile(appPath);
 
   mainWindow.on('closed', () => {

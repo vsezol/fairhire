@@ -3,7 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "types": ["node"],
-    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
+    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022"
   },
   "include": ["src/**/*.ts"],
   "exclude": [

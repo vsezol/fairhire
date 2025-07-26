@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "main": "dist/main.js",
   "nx": {
     "targets": {
       "build": {
@@ -22,6 +23,9 @@
           "tsConfig": "apps/tracker-electron/tsconfig.app.json",
           "assets": [
             "apps/tracker-electron/src/assets"
+          ],
+          "format": [
+            "esm"
           ],
           "sourcemap": true
         },
