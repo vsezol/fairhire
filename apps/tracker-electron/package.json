@@ -22,6 +22,15 @@
       "dist/**/*",
       "../tracker-app/dist/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "../tracker-app/dist",
+        "to": "tracker-app/dist",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "mac": {
       "icon": "assets/icon.icns",
       "target": [

@@ -24,7 +24,18 @@ function createMainWindow(): void {
     title: 'AntiCheat Interview',
   });
 
-  const appPath = join(__dirname, '../../tracker-app/dist/index.html');
+  // Определяем путь к HTML файлу в зависимости от режима (dev/prod)
+  let appPath: string;
+
+  if (app.isPackaged) {
+    // В production файлы находятся в extraResources (в папке Resources, на уровень выше app.asar)
+    appPath = join(__dirname, '../../tracker-app/dist/index.html');
+  } else {
+    // В development используем относительный путь
+    appPath = join(__dirname, '../../tracker-app/dist/index.html');
+  }
+
+  console.log('Loading app from:', appPath);
   mainWindow.loadFile(appPath);
 
   mainWindow.on('closed', () => {
