@@ -4,6 +4,79 @@
   "private": true,
   "type": "module",
   "main": "dist/main.js",
+  "homepage": "https://github.com/anticheat-interview/anticheat-interview",
+  "description": "AntiCheat Interview Application",
+  "author": {
+    "name": "AntiCheat Team",
+    "email": "team@anticheat.com"
+  },
+  "build": {
+    "appId": "com.anticheat.interview",
+    "productName": "AntiCheat Interview",
+    "executableName": "anticheat-interview",
+    "directories": {
+      "buildResources": "assets",
+      "output": "../../release"
+    },
+    "files": [
+      "dist/**/*",
+      "../tracker-app/dist/**/*"
+    ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "entitlements": null,
+      "entitlementsInherit": null,
+      "hardenedRuntime": false,
+      "notarize": false
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "synopsis": "AntiCheat Interview Application",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  },
   "nx": {
     "targets": {
       "build": {
@@ -63,6 +136,33 @@
           "production": {
             "commands": [
               "electron apps/tracker-electron/dist/main.js"
+            ]
+          }
+        }
+      },
+      "release": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "cwd": "apps/tracker-electron",
+          "parallel": false
+        },
+        "configurations": {
+          "mac": {
+            "commands": [
+              "electron-builder --mac --publish=never"
+            ]
+          },
+          "win": {
+            "commands": [
+              "electron-builder --win --publish=never"
+            ]
+          },
+          "linux": {
+            "commands": [
+              "electron-builder --linux --publish=never"
             ]
           }
         }
