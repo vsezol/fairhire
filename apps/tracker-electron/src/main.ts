@@ -69,30 +69,68 @@ function createBrowserWindow(url: string): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false, // Needed for some video call platforms
+      webSecurity: false, // Отключаем для Google Meet
       allowRunningInsecureContent: true,
       experimentalFeatures: true,
-      additionalArguments: [
-        '--enable-features=VaapiVideoDecoder',
-        '--disable-features=VizDisplayCompositor',
-      ],
+      // Убираем additionalArguments, которые могут выдавать Electron
     },
     title: 'Video Call',
+    show: false, // Сначала скрываем окно
   });
 
-  // Set Chrome-like user agent to bypass browser detection
+  // Более реалистичный Chrome User Agent без упоминания Electron
   const userAgent =
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
   browserWindow.webContents.setUserAgent(userAgent);
 
-  // Additional headers to make it look like a real browser
+  // Переопределяем navigator.webdriver, чтобы скрыть автоматизацию
+  browserWindow.webContents.on('dom-ready', () => {
+    browserWindow?.webContents.executeJavaScript(`
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+        configurable: true
+      });
+
+      if (window.process) {
+        delete window.process;
+      }
+      if (window.require) {
+        delete window.require;
+      }
+      if (window.module) {
+        delete window.module;
+      }
+      if (window.global) {
+        delete window.global;
+      }
+    `);
+
+    // Показываем окно только после загрузки и настройки
+    browserWindow?.show();
+  });
+
+  // Улучшенные заголовки для имитации реального браузера
   browserWindow.webContents.session.webRequest.onBeforeSendHeaders(
     (details, callback) => {
-      details.requestHeaders['Accept-Language'] = 'en-US,en;q=0.9';
+      details.requestHeaders['Accept-Language'] = 'en-US,en;q=0.9,ru;q=0.8';
       details.requestHeaders['Accept'] =
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8';
-      details.requestHeaders['Cache-Control'] = 'no-cache';
-      details.requestHeaders['Pragma'] = 'no-cache';
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
+      details.requestHeaders['Accept-Encoding'] = 'gzip, deflate, br, zstd';
+      details.requestHeaders['Cache-Control'] = 'max-age=0';
+      details.requestHeaders['Sec-Ch-Ua'] =
+        '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"';
+      details.requestHeaders['Sec-Ch-Ua-Mobile'] = '?0';
+      details.requestHeaders['Sec-Ch-Ua-Platform'] = '"macOS"';
+      details.requestHeaders['Sec-Fetch-Dest'] = 'document';
+      details.requestHeaders['Sec-Fetch-Mode'] = 'navigate';
+      details.requestHeaders['Sec-Fetch-Site'] = 'none';
+      details.requestHeaders['Sec-Fetch-User'] = '?1';
+      details.requestHeaders['Upgrade-Insecure-Requests'] = '1';
+
+      // Убираем заголовки, которые могут выдать Electron
+      delete details.requestHeaders[
+        'X-DevTools-Emulate-Network-Conditions-Client-Id'
+      ];
 
       callback({ requestHeaders: details.requestHeaders });
     }
@@ -172,9 +210,13 @@ app.commandLine.appendSwitch('--enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('--allow-http-screen-capture');
 app.commandLine.appendSwitch('--auto-select-desktop-capture-source', 'Screen');
 app.commandLine.appendSwitch('--enable-experimental-web-platform-features');
-app.commandLine.appendSwitch('--disable-web-security');
-app.commandLine.appendSwitch('--disable-site-isolation-trials');
-app.commandLine.appendSwitch('--disable-features=VizDisplayCompositor');
+// Убираем --disable-web-security и --disable-site-isolation-trials
+// Они могут выдавать автоматизированный браузер
+app.commandLine.appendSwitch('--no-first-run');
+app.commandLine.appendSwitch('--no-default-browser-check');
+app.commandLine.appendSwitch('--disable-background-timer-throttling');
+app.commandLine.appendSwitch('--disable-renderer-backgrounding');
+app.commandLine.appendSwitch('--disable-backgrounding-occluded-windows');
 
 app.whenReady().then(() => {
   createMainWindow();
