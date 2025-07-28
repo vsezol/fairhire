@@ -8,6 +8,10 @@ const __dirname = dirname(__filename);
 let mainWindow: BrowserWindow;
 let browserWindow: BrowserWindow | null = null;
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 450,
@@ -25,15 +29,7 @@ function createMainWindow(): void {
   });
 
   // Определяем путь к HTML файлу в зависимости от режима (dev/prod)
-  let appPath: string;
-
-  if (app.isPackaged) {
-    // В production файлы находятся в extraResources (в папке Resources, на уровень выше app.asar)
-    appPath = join(__dirname, '../../tracker-app/dist/index.html');
-  } else {
-    // В development используем относительный путь
-    appPath = join(__dirname, '../../tracker-app/dist/index.html');
-  }
+  const appPath = join(__dirname, '../../tracker-app/dist/index.html');
 
   console.log('Loading app from:', appPath);
   mainWindow.loadFile(appPath);
@@ -71,7 +67,11 @@ function createMainWindow(): void {
 
 function createBrowserWindow(url: string): void {
   if (browserWindow) {
-    browserWindow.close();
+    try {
+      browserWindow.close();
+    } catch (error) {
+      console.log('Error closing previous browser window:', error);
+    }
   }
 
   browserWindow = new BrowserWindow({
@@ -80,34 +80,41 @@ function createBrowserWindow(url: string): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
-      allowRunningInsecureContent: true,
+      webSecurity: true, // Включаем обратно для нормальной работы ресурсов
+      allowRunningInsecureContent: false, // Отключаем для лучшей совместимости
       experimentalFeatures: true,
-      // Дополнительные флаги для лучшей маскировки
       backgroundThrottling: false,
-      offscreen: false,
+      spellcheck: false,
+      partition: 'persist:meet-session',
     },
     title: 'Video Call',
     show: false,
   });
 
-  // Обновленный User Agent с более свежей версией Chrome
+  // Современный User Agent
   const userAgent =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
   browserWindow.webContents.setUserAgent(userAgent);
 
-  // Улучшенная маскировка с дополнительными объектами
+  // Упрощенная маскировка без блокировки консоли
   browserWindow.webContents.on('dom-ready', () => {
-    browserWindow?.webContents.executeJavaScript(`
-      // Удаляем все следы Electron
+    browserWindow?.webContents
+      .executeJavaScript(
+        `
+      // Базовая маскировка
       Object.defineProperty(navigator, 'webdriver', {
         get: () => undefined,
         configurable: true
       });
 
-      // Дополнительные объекты для маскировки
+      // Реалистичные plugins
       Object.defineProperty(navigator, 'plugins', {
-        get: () => [1, 2, 3, 4, 5],
+        get: () => ({
+          length: 3,
+          0: { name: 'Chrome PDF Plugin', description: 'Portable Document Format', filename: 'internal-pdf-viewer' },
+          1: { name: 'Chromium PDF Plugin', description: 'Portable Document Format', filename: 'internal-pdf-viewer' },
+          2: { name: 'Microsoft Edge PDF Plugin', description: 'Portable Document Format', filename: 'internal-pdf-viewer' }
+        }),
         configurable: true
       });
 
@@ -116,24 +123,17 @@ function createBrowserWindow(url: string): void {
         configurable: true
       });
 
-      // Удаляем Node.js объекты
-      if (window.process) delete window.process;
-      if (window.require) delete window.require;
-      if (window.module) delete window.module;
-      if (window.global) delete window.global;
-      if (window.Buffer) delete window.Buffer;
-      if (window.clearImmediate) delete window.clearImmediate;
-      if (window.setImmediate) delete window.setImmediate;
-
-      // Маскируем Chrome объекты
-      if (window.chrome) {
-        window.chrome = {
-          runtime: {},
-          loadTimes: function() {},
-          csi: function() {},
-          app: {}
-        };
-      }
+      // Удаляем Node.js следы более аккуратно
+      const objectsToDelete = ['process', 'require', 'module', 'global', 'Buffer', 'clearImmediate', 'setImmediate'];
+      objectsToDelete.forEach(obj => {
+        if (window[obj]) {
+          try {
+            delete window[obj];
+          } catch (e) {
+            window[obj] = undefined;
+          }
+        }
+      });
 
       // Добавляем реалистичные свойства
       Object.defineProperty(navigator, 'hardwareConcurrency', {
@@ -146,62 +146,56 @@ function createBrowserWindow(url: string): void {
         configurable: true
       });
 
-      // Защита от CDP детекции
-      const originalLog = console.log;
-      console.log = function(...args) {
-        if (args.length === 1 && args[0] instanceof Error) {
-          return;
-        }
-        return originalLog.apply(console, args);
-      };
-    `);
+      // НЕ блокируем console.log - это ломает Google Meet
+      // Только маскируем webdriver
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => false,
+        configurable: true
+      });
+    `
+      )
+      .catch((error) => {
+        console.log('Error executing JavaScript:', error);
+      });
 
-    // Добавляем небольшую задержку перед показом окна (имитация человека)
+    // Показываем окно с небольшой задержкой
     setTimeout(() => {
       browserWindow?.show();
-    }, 1000 + Math.random() * 2000); // 1-3 секунды случайной задержки
+    }, 1000 + Math.random() * 500);
   });
 
-  // Расширенные заголовки для лучшей маскировки
+  // Менее агрессивная конфигурация заголовков
   browserWindow.webContents.session.webRequest.onBeforeSendHeaders(
     (details, callback) => {
+      const headers = { ...details.requestHeaders };
+
       // Базовые заголовки
-      details.requestHeaders['Accept-Language'] = 'en-US,en;q=0.9,ru;q=0.8';
-      details.requestHeaders['Accept'] =
+      headers['Accept-Language'] = 'en-US,en;q=0.9,ru;q=0.8';
+      headers['Accept'] =
         'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
-      details.requestHeaders['Accept-Encoding'] = 'gzip, deflate, br, zstd';
-      details.requestHeaders['Cache-Control'] = 'max-age=0';
+      headers['Accept-Encoding'] = 'gzip, deflate, br, zstd';
 
-      // Обновленные Sec-Ch-Ua заголовки для Chrome 131
-      details.requestHeaders['Sec-Ch-Ua'] =
+      // Актуальные Chrome заголовки
+      headers['Sec-Ch-Ua'] =
         '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"';
-      details.requestHeaders['Sec-Ch-Ua-Mobile'] = '?0';
-      details.requestHeaders['Sec-Ch-Ua-Platform'] = '"macOS"';
-      details.requestHeaders['Sec-Ch-Ua-Platform-Version'] = '"13.0.0"';
-      details.requestHeaders['Sec-Ch-Ua-Full-Version'] = '"131.0.0.0"';
-      details.requestHeaders['Sec-Ch-Ua-Arch'] = '"x86"';
-      details.requestHeaders['Sec-Ch-Ua-Model'] = '""';
-      details.requestHeaders['Sec-Ch-Ua-Bitness'] = '"64"';
+      headers['Sec-Ch-Ua-Mobile'] = '?0';
+      headers['Sec-Ch-Ua-Platform'] = '"macOS"';
 
-      details.requestHeaders['Sec-Fetch-Dest'] = 'document';
-      details.requestHeaders['Sec-Fetch-Mode'] = 'navigate';
-      details.requestHeaders['Sec-Fetch-Site'] = 'none';
-      details.requestHeaders['Sec-Fetch-User'] = '?1';
-      details.requestHeaders['Upgrade-Insecure-Requests'] = '1';
+      headers['Sec-Fetch-Dest'] = 'document';
+      headers['Sec-Fetch-Mode'] = 'navigate';
+      headers['Sec-Fetch-Site'] = 'none';
+      headers['Sec-Fetch-User'] = '?1';
+      headers['Upgrade-Insecure-Requests'] = '1';
 
-      // Дополнительные заголовки для реалистичности
-      details.requestHeaders['DNT'] = '1';
-      details.requestHeaders['Connection'] = 'keep-alive';
+      // Удаляем только явно подозрительные заголовки
+      delete headers['X-DevTools-Emulate-Network-Conditions-Client-Id'];
 
-      // Удаляем подозрительные заголовки
-      delete details.requestHeaders[
-        'X-DevTools-Emulate-Network-Conditions-Client-Id'
-      ];
-      delete details.requestHeaders['X-Client-Data'];
-
-      callback({ requestHeaders: details.requestHeaders });
+      callback({ requestHeaders: headers });
     }
   );
+
+  // Убираем агрессивные SSL настройки
+  // НЕ используем setCertificateVerifyProc - это может ломать загрузку ресурсов
 
   // Set permissions for media access
   session.defaultSession.setPermissionRequestHandler(
@@ -231,10 +225,14 @@ function createBrowserWindow(url: string): void {
     return { action: 'deny' };
   });
 
-  // Добавляем случайную задержку перед загрузкой URL
+  // Загрузка URL с небольшой задержкой
   setTimeout(() => {
-    browserWindow?.loadURL(url);
-  }, 500 + Math.random() * 1500);
+    if (browserWindow && !browserWindow.isDestroyed()) {
+      browserWindow.loadURL(url).catch((error) => {
+        console.log('Error loading URL:', error);
+      });
+    }
+  }, 500 + Math.random() * 500);
 
   // Debug: Log page load events
   browserWindow.webContents.on('did-finish-load', () => {
@@ -250,6 +248,17 @@ function createBrowserWindow(url: string): void {
         errorDescription,
         validatedURL
       );
+
+      // Более мягкий retry только для критических ошибок
+      if (errorCode === -105 || errorCode === -106) {
+        // Name resolution errors
+        console.log('Network error detected, retrying in 2 seconds...');
+        setTimeout(() => {
+          if (browserWindow && !browserWindow.isDestroyed()) {
+            browserWindow.loadURL(validatedURL).catch(console.log);
+          }
+        }, 2000);
+      }
     }
   );
 
@@ -259,6 +268,11 @@ function createBrowserWindow(url: string): void {
 
   browserWindow.on('closed', () => {
     browserWindow = null;
+  });
+
+  // Обработка необработанных исключений в renderer процессе
+  browserWindow.webContents.on('render-process-gone', (event, details) => {
+    console.log('Renderer process gone:', details);
   });
 }
 
@@ -270,7 +284,11 @@ ipcMain.handle('open-url', async (event, url: string) => {
     createBrowserWindow(url);
     return { success: true };
   } catch (error) {
-    return { success: false, error: 'Invalid URL' };
+    console.error('Error in open-url handler:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Invalid URL',
+    };
   }
 });
 
@@ -280,13 +298,25 @@ app.commandLine.appendSwitch('--enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('--allow-http-screen-capture');
 app.commandLine.appendSwitch('--auto-select-desktop-capture-source', 'Screen');
 app.commandLine.appendSwitch('--enable-experimental-web-platform-features');
-// Убираем --disable-web-security и --disable-site-isolation-trials
-// Они могут выдавать автоматизированный браузер
+
+// Более мягкая маскировка
+app.commandLine.appendSwitch('--disable-blink-features=AutomationControlled');
 app.commandLine.appendSwitch('--no-first-run');
 app.commandLine.appendSwitch('--no-default-browser-check');
 app.commandLine.appendSwitch('--disable-background-timer-throttling');
 app.commandLine.appendSwitch('--disable-renderer-backgrounding');
 app.commandLine.appendSwitch('--disable-backgrounding-occluded-windows');
+
+// Улучшения производительности и стабильности
+app.commandLine.appendSwitch(
+  '--enable-features=VaapiVideoDecoder,WebRTCPipeWireCapturer'
+);
+app.commandLine.appendSwitch('--disable-features=TranslateUI');
+app.commandLine.appendSwitch('--enable-gpu-rasterization');
+app.commandLine.appendSwitch('--enable-zero-copy');
+
+// Убираем агрессивные SSL флаги
+// НЕ используем --ignore-ssl-errors и подобные
 
 app.whenReady().then(() => {
   createMainWindow();
