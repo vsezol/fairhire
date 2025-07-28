@@ -1,10 +1,12 @@
 import { VideoCallStrategy } from './video-call-strategy.js';
 import { DefaultVideoCallStrategy } from './default-video-call-strategy.js';
 import { GoogleMeetStrategy } from './google-meet-strategy.js';
+import { ZoomStrategy } from './zoom-strategy.js';
 
 export class VideoCallStrategyFactory {
   private static strategies: VideoCallStrategy[] = [
     new GoogleMeetStrategy(),
+    new ZoomStrategy(),
     new DefaultVideoCallStrategy(),
   ];
 

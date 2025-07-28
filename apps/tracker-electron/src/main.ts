@@ -210,6 +210,11 @@ async function createWindow(
 
   // Handle external links
   browserWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Блокируем zoomus:// ссылки
+    if (url.startsWith('zoomus://')) {
+      console.log('Blocked external zoomus:// link:', url);
+      return { action: 'deny' };
+    }
     shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -217,6 +222,8 @@ async function createWindow(
   // Промис для отслеживания успешной загрузки
   return new Promise((resolve, reject) => {
     let isResolved = false;
+    let retryCount = 0;
+
     const resolveOnce = (result: BrowserWindow) => {
       if (!isResolved) {
         isResolved = true;
@@ -228,6 +235,34 @@ async function createWindow(
       if (!isResolved) {
         isResolved = true;
         reject(error);
+      }
+    };
+
+    // Функция для попытки загрузки с альтернативным URL
+    const tryLoadAlternative = () => {
+      const fallbackUrls = (strategy as any).fallbackUrls || [];
+      if (retryCount < fallbackUrls.length) {
+        const alternativeUrl = fallbackUrls[retryCount];
+        console.log(
+          `Trying alternative Zoom URL (${retryCount + 1}):`,
+          alternativeUrl
+        );
+        retryCount++;
+
+        setTimeout(() => {
+          if (browserWindow && !browserWindow.isDestroyed()) {
+            browserWindow.loadURL(alternativeUrl).catch((error) => {
+              console.log('Error loading alternative URL:', error);
+              if (retryCount < fallbackUrls.length) {
+                tryLoadAlternative();
+              } else {
+                rejectOnce(new Error('All alternative URLs failed'));
+              }
+            });
+          }
+        }, 1000);
+      } else {
+        rejectOnce(new Error('No more alternative URLs to try'));
       }
     };
 
@@ -252,6 +287,16 @@ async function createWindow(
             errorDescription,
             validatedURL
           );
+
+          // Если это Zoom и ошибка связана с redirection, пробуем альтернативные URL
+          if (
+            strategy.name === 'Zoom' &&
+            (errorCode === -3 || validatedURL.startsWith('zoomus://'))
+          ) {
+            console.log('Zoom redirect detected, trying alternative URL...');
+            tryLoadAlternative();
+            return;
+          }
 
           clearTimeout(timeout);
 
@@ -283,6 +328,44 @@ async function createWindow(
       rejectOnce(new Error('Browser window not created'));
     }
 
+    // Модифицируем URL для Zoom стратегии - пробуем разные подходы
+    let finalUrl = url;
+    if (strategy.name === 'Zoom') {
+      const urlObj = new URL(url);
+
+      // Извлекаем ID встречи и пароль
+      const meetingId =
+        urlObj.pathname.split('/j/')[1] || urlObj.searchParams.get('confno');
+      const password = urlObj.searchParams.get('pwd');
+
+      // Пробуем разные форматы URL для веб-версии
+      const webFormats = [
+        // Формат 1: Стандартный с параметрами принуждения к веб-версии
+        `${urlObj.origin}/wc/join/${meetingId}?prefer=web&web=1&type=100${
+          password ? `&pwd=${password}` : ''
+        }`,
+
+        // Формат 2: Прямой веб-клиент
+        `${
+          urlObj.origin
+        }/j/${meetingId}?prefer=web&web=1&type=100&uname=WebUser${
+          password ? `&pwd=${password}` : ''
+        }`,
+
+        // Формат 3: Явное указание веб-клиента
+        `${urlObj.origin}/webclient/meeting.html?mn=${meetingId}&web=1${
+          password ? `&pwd=${password}` : ''
+        }`,
+      ];
+
+      // Используем первый формат как основной
+      finalUrl = webFormats[0];
+      console.log('Modified Zoom URL (Format 1):', finalUrl);
+
+      // Сохраняем альтернативные форматы для повторных попыток
+      (strategy as any).fallbackUrls = webFormats.slice(1);
+    }
+
     // Загрузка URL с адаптивной задержкой
     const delays = strategy.getDelays();
     const loadDelay = delays.loadDelay || 100;
@@ -290,8 +373,11 @@ async function createWindow(
     setTimeout(() => {
       if (browserWindow && !browserWindow.isDestroyed()) {
         console.log(`Loading ${strategy.name} strategy for URL...`);
-        browserWindow.loadURL(url).catch((error) => {
+        browserWindow.loadURL(finalUrl).catch((error) => {
           console.log('Error loading URL:', error);
+          if (strategy.name === 'Zoom') {
+            tryLoadAlternative();
+          }
         });
       }
     }, loadDelay);
@@ -340,6 +426,17 @@ app.commandLine.appendSwitch('--enable-zero-copy');
 // Дополнительные флаги для стабильности SSL
 app.commandLine.appendSwitch('--enable-tls13-early-data');
 app.commandLine.appendSwitch('--disable-dev-shm-usage');
+
+// НОВЫЕ ФЛАГИ ДЛЯ РЕШЕНИЯ ПРОБЛЕМЫ С ZOOM И QUIC ПРОТОКОЛОМ
+app.commandLine.appendSwitch('--disable-quic');
+app.commandLine.appendSwitch('--disable-http2');
+app.commandLine.appendSwitch('--disable-features=VizDisplayCompositor');
+app.commandLine.appendSwitch('--ignore-certificate-errors');
+app.commandLine.appendSwitch('--ignore-ssl-errors');
+app.commandLine.appendSwitch('--ignore-certificate-errors-spki-list');
+app.commandLine.appendSwitch('--disable-web-security');
+app.commandLine.appendSwitch('--allow-running-insecure-content');
+app.commandLine.appendSwitch('--disable-site-isolation-trials');
 
 app.whenReady().then(() => {
   createMainWindow();
