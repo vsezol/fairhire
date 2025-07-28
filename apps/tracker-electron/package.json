@@ -1,19 +1,19 @@
 {
   "name": "@anticheat-interview/tracker-electron",
-  "version": "0.0.1",
+  "version": "0.0.8",
   "private": true,
   "type": "module",
   "main": "dist/main.js",
   "homepage": "https://github.com/anticheat-interview/anticheat-interview",
-  "description": "AntiCheat Interview Application",
+  "description": "FairHire Interview Application",
   "author": {
-    "name": "AntiCheat Team",
+    "name": "FairHire Team",
     "email": "team@anticheat.com"
   },
   "build": {
-    "appId": "com.anticheat.interview",
-    "productName": "AntiCheat Interview",
-    "executableName": "anticheat-interview",
+    "appId": "com.fairhire.interview",
+    "productName": "FairHire Interview",
+    "executableName": "FairHire",
     "directories": {
       "buildResources": "assets",
       "output": "../../release"
@@ -76,7 +76,7 @@
           ]
         }
       ],
-      "synopsis": "AntiCheat Interview Application",
+      "synopsis": "FairHire Interview Application",
       "category": "Development"
     },
     "nsis": {

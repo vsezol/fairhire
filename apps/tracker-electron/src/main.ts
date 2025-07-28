@@ -80,68 +80,124 @@ function createBrowserWindow(url: string): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false, // Отключаем для Google Meet
+      webSecurity: false,
       allowRunningInsecureContent: true,
       experimentalFeatures: true,
-      // Убираем additionalArguments, которые могут выдавать Electron
+      // Дополнительные флаги для лучшей маскировки
+      backgroundThrottling: false,
+      offscreen: false,
     },
     title: 'Video Call',
-    show: false, // Сначала скрываем окно
+    show: false,
   });
 
-  // Более реалистичный Chrome User Agent без упоминания Electron
+  // Обновленный User Agent с более свежей версией Chrome
   const userAgent =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
   browserWindow.webContents.setUserAgent(userAgent);
 
-  // Переопределяем navigator.webdriver, чтобы скрыть автоматизацию
+  // Улучшенная маскировка с дополнительными объектами
   browserWindow.webContents.on('dom-ready', () => {
     browserWindow?.webContents.executeJavaScript(`
+      // Удаляем все следы Electron
       Object.defineProperty(navigator, 'webdriver', {
         get: () => undefined,
         configurable: true
       });
 
-      if (window.process) {
-        delete window.process;
+      // Дополнительные объекты для маскировки
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+        configurable: true
+      });
+
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en', 'ru'],
+        configurable: true
+      });
+
+      // Удаляем Node.js объекты
+      if (window.process) delete window.process;
+      if (window.require) delete window.require;
+      if (window.module) delete window.module;
+      if (window.global) delete window.global;
+      if (window.Buffer) delete window.Buffer;
+      if (window.clearImmediate) delete window.clearImmediate;
+      if (window.setImmediate) delete window.setImmediate;
+
+      // Маскируем Chrome объекты
+      if (window.chrome) {
+        window.chrome = {
+          runtime: {},
+          loadTimes: function() {},
+          csi: function() {},
+          app: {}
+        };
       }
-      if (window.require) {
-        delete window.require;
-      }
-      if (window.module) {
-        delete window.module;
-      }
-      if (window.global) {
-        delete window.global;
-      }
+
+      // Добавляем реалистичные свойства
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        get: () => 8,
+        configurable: true
+      });
+
+      Object.defineProperty(navigator, 'deviceMemory', {
+        get: () => 8,
+        configurable: true
+      });
+
+      // Защита от CDP детекции
+      const originalLog = console.log;
+      console.log = function(...args) {
+        if (args.length === 1 && args[0] instanceof Error) {
+          return;
+        }
+        return originalLog.apply(console, args);
+      };
     `);
 
-    // Показываем окно только после загрузки и настройки
-    browserWindow?.show();
+    // Добавляем небольшую задержку перед показом окна (имитация человека)
+    setTimeout(() => {
+      browserWindow?.show();
+    }, 1000 + Math.random() * 2000); // 1-3 секунды случайной задержки
   });
 
-  // Улучшенные заголовки для имитации реального браузера
+  // Расширенные заголовки для лучшей маскировки
   browserWindow.webContents.session.webRequest.onBeforeSendHeaders(
     (details, callback) => {
+      // Базовые заголовки
       details.requestHeaders['Accept-Language'] = 'en-US,en;q=0.9,ru;q=0.8';
       details.requestHeaders['Accept'] =
         'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
       details.requestHeaders['Accept-Encoding'] = 'gzip, deflate, br, zstd';
       details.requestHeaders['Cache-Control'] = 'max-age=0';
+
+      // Обновленные Sec-Ch-Ua заголовки для Chrome 131
       details.requestHeaders['Sec-Ch-Ua'] =
         '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"';
       details.requestHeaders['Sec-Ch-Ua-Mobile'] = '?0';
       details.requestHeaders['Sec-Ch-Ua-Platform'] = '"macOS"';
+      details.requestHeaders['Sec-Ch-Ua-Platform-Version'] = '"13.0.0"';
+      details.requestHeaders['Sec-Ch-Ua-Full-Version'] = '"131.0.0.0"';
+      details.requestHeaders['Sec-Ch-Ua-Arch'] = '"x86"';
+      details.requestHeaders['Sec-Ch-Ua-Model'] = '""';
+      details.requestHeaders['Sec-Ch-Ua-Bitness'] = '"64"';
+
       details.requestHeaders['Sec-Fetch-Dest'] = 'document';
       details.requestHeaders['Sec-Fetch-Mode'] = 'navigate';
       details.requestHeaders['Sec-Fetch-Site'] = 'none';
       details.requestHeaders['Sec-Fetch-User'] = '?1';
       details.requestHeaders['Upgrade-Insecure-Requests'] = '1';
 
-      // Убираем заголовки, которые могут выдать Electron
+      // Дополнительные заголовки для реалистичности
+      details.requestHeaders['DNT'] = '1';
+      details.requestHeaders['Connection'] = 'keep-alive';
+
+      // Удаляем подозрительные заголовки
       delete details.requestHeaders[
         'X-DevTools-Emulate-Network-Conditions-Client-Id'
       ];
+      delete details.requestHeaders['X-Client-Data'];
 
       callback({ requestHeaders: details.requestHeaders });
     }
@@ -175,7 +231,10 @@ function createBrowserWindow(url: string): void {
     return { action: 'deny' };
   });
 
-  browserWindow.loadURL(url);
+  // Добавляем случайную задержку перед загрузкой URL
+  setTimeout(() => {
+    browserWindow?.loadURL(url);
+  }, 500 + Math.random() * 1500);
 
   // Debug: Log page load events
   browserWindow.webContents.on('did-finish-load', () => {
