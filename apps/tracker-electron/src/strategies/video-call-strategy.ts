@@ -11,6 +11,11 @@ export interface VideoCallConfig {
   windowConfig: Partial<Electron.BrowserWindowConstructorOptions>;
 }
 
+export interface PreparedUrls {
+  primaryUrl: string;
+  alternativeUrls: string[];
+}
+
 export abstract class VideoCallStrategy {
   abstract name: string;
 
@@ -43,6 +48,33 @@ export abstract class VideoCallStrategy {
    * Получение задержек для показа окна
    */
   abstract getDelays(): VideoCallDelays;
+
+  /**
+   * Подготовка URL для загрузки (основной и альтернативные)
+   */
+  prepareUrls(originalUrl: string): PreparedUrls {
+    // По умолчанию возвращаем оригинальный URL без альтернатив
+    return {
+      primaryUrl: originalUrl,
+      alternativeUrls: [],
+    };
+  }
+
+  /**
+   * Проверяет, нужно ли повторить загрузку при ошибке did-fail-load
+   */
+  shouldRetryOnError(errorCode: number, validatedURL: string): boolean {
+    // По умолчанию не повторяем
+    return false;
+  }
+
+  /**
+   * Проверяет, нужно ли использовать альтернативные URL при ошибке loadURL
+   */
+  shouldUseAlternativeOnLoadError(): boolean {
+    // По умолчанию не используем альтернативы
+    return false;
+  }
 
   /**
    * Логирование для отладки

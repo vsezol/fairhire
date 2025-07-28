@@ -238,13 +238,18 @@ async function createWindow(
       }
     };
 
+    // Подготавливаем URL через стратегию
+    const preparedUrls = strategy.prepareUrls(url);
+    const alternativeUrls = preparedUrls.alternativeUrls;
+
     // Функция для попытки загрузки с альтернативным URL
     const tryLoadAlternative = () => {
-      const fallbackUrls = (strategy as any).fallbackUrls || [];
-      if (retryCount < fallbackUrls.length) {
-        const alternativeUrl = fallbackUrls[retryCount];
+      if (retryCount < alternativeUrls.length) {
+        const alternativeUrl = alternativeUrls[retryCount];
         console.log(
-          `Trying alternative Zoom URL (${retryCount + 1}):`,
+          `Trying alternative URL (${retryCount + 1}/${
+            alternativeUrls.length
+          }):`,
           alternativeUrl
         );
         retryCount++;
@@ -253,7 +258,7 @@ async function createWindow(
           if (browserWindow && !browserWindow.isDestroyed()) {
             browserWindow.loadURL(alternativeUrl).catch((error) => {
               console.log('Error loading alternative URL:', error);
-              if (retryCount < fallbackUrls.length) {
+              if (retryCount < alternativeUrls.length) {
                 tryLoadAlternative();
               } else {
                 rejectOnce(new Error('All alternative URLs failed'));
@@ -288,12 +293,9 @@ async function createWindow(
             validatedURL
           );
 
-          // Если это Zoom и ошибка связана с redirection, пробуем альтернативные URL
-          if (
-            strategy.name === 'Zoom' &&
-            (errorCode === -3 || validatedURL.startsWith('zoomus://'))
-          ) {
-            console.log('Zoom redirect detected, trying alternative URL...');
+          // Проверяем через стратегию, нужно ли повторить попытку
+          if (strategy.shouldRetryOnError(errorCode, validatedURL)) {
+            console.log('Strategy suggests retry, trying alternative URL...');
             tryLoadAlternative();
             return;
           }
@@ -328,44 +330,6 @@ async function createWindow(
       rejectOnce(new Error('Browser window not created'));
     }
 
-    // Модифицируем URL для Zoom стратегии - пробуем разные подходы
-    let finalUrl = url;
-    if (strategy.name === 'Zoom') {
-      const urlObj = new URL(url);
-
-      // Извлекаем ID встречи и пароль
-      const meetingId =
-        urlObj.pathname.split('/j/')[1] || urlObj.searchParams.get('confno');
-      const password = urlObj.searchParams.get('pwd');
-
-      // Пробуем разные форматы URL для веб-версии
-      const webFormats = [
-        // Формат 1: Стандартный с параметрами принуждения к веб-версии
-        `${urlObj.origin}/wc/join/${meetingId}?prefer=web&web=1&type=100${
-          password ? `&pwd=${password}` : ''
-        }`,
-
-        // Формат 2: Прямой веб-клиент
-        `${
-          urlObj.origin
-        }/j/${meetingId}?prefer=web&web=1&type=100&uname=WebUser${
-          password ? `&pwd=${password}` : ''
-        }`,
-
-        // Формат 3: Явное указание веб-клиента
-        `${urlObj.origin}/webclient/meeting.html?mn=${meetingId}&web=1${
-          password ? `&pwd=${password}` : ''
-        }`,
-      ];
-
-      // Используем первый формат как основной
-      finalUrl = webFormats[0];
-      console.log('Modified Zoom URL (Format 1):', finalUrl);
-
-      // Сохраняем альтернативные форматы для повторных попыток
-      (strategy as any).fallbackUrls = webFormats.slice(1);
-    }
-
     // Загрузка URL с адаптивной задержкой
     const delays = strategy.getDelays();
     const loadDelay = delays.loadDelay || 100;
@@ -373,9 +337,9 @@ async function createWindow(
     setTimeout(() => {
       if (browserWindow && !browserWindow.isDestroyed()) {
         console.log(`Loading ${strategy.name} strategy for URL...`);
-        browserWindow.loadURL(finalUrl).catch((error) => {
+        browserWindow.loadURL(preparedUrls.primaryUrl).catch((error) => {
           console.log('Error loading URL:', error);
-          if (strategy.name === 'Zoom') {
+          if (strategy.shouldUseAlternativeOnLoadError()) {
             tryLoadAlternative();
           }
         });

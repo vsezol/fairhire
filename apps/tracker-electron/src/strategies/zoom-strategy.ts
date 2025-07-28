@@ -3,10 +3,12 @@ import {
   VideoCallStrategy,
   VideoCallConfig,
   VideoCallDelays,
+  PreparedUrls,
 } from './video-call-strategy.js';
 
 export class ZoomStrategy extends VideoCallStrategy {
   name = 'Zoom';
+  private alternativeUrls: string[] = [];
 
   canHandle(url: string): boolean {
     try {
@@ -26,6 +28,93 @@ export class ZoomStrategy extends VideoCallStrategy {
     this.log('Warming up Zoom session...');
     await new Promise((resolve) => setTimeout(resolve, 200));
     this.log('Zoom session warmup completed');
+  }
+
+  /**
+   * Подготавливает основной и альтернативные URL для Zoom
+   */
+  override prepareUrls(originalUrl: string): PreparedUrls {
+    try {
+      const urlObj = new URL(originalUrl);
+
+      // Извлекаем ID встречи и пароль
+      const meetingId =
+        urlObj.pathname.split('/j/')[1] || urlObj.searchParams.get('confno');
+      const password = urlObj.searchParams.get('pwd');
+
+      if (!meetingId) {
+        this.log('Could not extract meeting ID from URL:', originalUrl);
+        return {
+          primaryUrl: originalUrl,
+          alternativeUrls: [],
+        };
+      }
+
+      // Создаем разные форматы URL для веб-версии
+      const webFormats = [
+        // Формат 1: Стандартный с параметрами принуждения к веб-версии
+        `${urlObj.origin}/wc/join/${meetingId}?prefer=web&web=1&type=100${
+          password ? `&pwd=${password}` : ''
+        }`,
+
+        // Формат 2: Прямой веб-клиент
+        `${
+          urlObj.origin
+        }/j/${meetingId}?prefer=web&web=1&type=100&uname=WebUser${
+          password ? `&pwd=${password}` : ''
+        }`,
+
+        // Формат 3: Явное указание веб-клиента
+        `${urlObj.origin}/webclient/meeting.html?mn=${meetingId}&web=1${
+          password ? `&pwd=${password}` : ''
+        }`,
+      ];
+
+      // Сохраняем альтернативные URL для повторных попыток
+      this.alternativeUrls = webFormats.slice(1);
+
+      this.log('Prepared Zoom URLs:');
+      this.log('Primary URL:', webFormats[0]);
+      this.log('Alternative URLs:', this.alternativeUrls);
+
+      return {
+        primaryUrl: webFormats[0],
+        alternativeUrls: this.alternativeUrls,
+      };
+    } catch (error) {
+      this.log('Error preparing Zoom URLs:', error);
+      return {
+        primaryUrl: originalUrl,
+        alternativeUrls: [],
+      };
+    }
+  }
+
+  /**
+   * Проверяет, нужно ли повторить загрузку при ошибке did-fail-load
+   */
+  override shouldRetryOnError(
+    errorCode: number,
+    validatedURL: string
+  ): boolean {
+    // Повторяем для Zoom редиректов на нативное приложение
+    const isZoomRedirect =
+      errorCode === -3 || validatedURL.startsWith('zoomus://');
+
+    if (isZoomRedirect) {
+      this.log('Zoom redirect detected, will try alternative URL');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Проверяет, нужно ли использовать альтернативные URL при ошибке loadURL
+   */
+  override shouldUseAlternativeOnLoadError(): boolean {
+    // Всегда пробуем альтернативы для Zoom при ошибке загрузки
+    return true;
   }
 
   getWindowConfig(): VideoCallConfig {
