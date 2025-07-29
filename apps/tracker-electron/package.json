@@ -61,25 +61,6 @@
         }
       ]
     },
-    "linux": {
-      "icon": "assets/icon.png",
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "synopsis": "FairHire Interview Application",
-      "category": "Development"
-    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
