@@ -6,6 +6,10 @@ import {
   VideoCallStrategy,
   VideoCallStrategyFactory,
 } from './strategies/index.js';
+import {
+  initializeActivityTracker,
+  GlobalActivityTracker,
+} from './activity-tracker.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
@@ -15,6 +19,7 @@ const __dirname = dirname(__filename);
 
 let mainWindow: BrowserWindow;
 let browserWindow: BrowserWindow | null = null;
+let activityTracker: GlobalActivityTracker;
 
 process.on('unhandledRejection', (reason, promise) => {
   console.log('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -160,6 +165,8 @@ async function createWindow(
     webPreferences: {
       ...config.windowConfig.webPreferences,
       partition: config.sessionPartition,
+      sandbox: false,
+      preload: join(__dirname, 'preload.js'),
     },
   });
 
@@ -279,6 +286,10 @@ async function createWindow(
     if (browserWindow) {
       browserWindow.webContents.on('did-finish-load', () => {
         console.log('Page loaded successfully');
+
+        console.log('🖱️ Setting up mouse click tracking after page load...');
+        activityTracker.setupMouseClickTracking(browserWindow!);
+
         clearTimeout(timeout);
         resolveOnce(browserWindow!);
       });
@@ -321,7 +332,12 @@ async function createWindow(
         }
       );
 
-      browserWindow.on('closed', () => {
+      browserWindow.on('closed', async () => {
+        if (activityTracker && activityTracker.isCurrentlyTracking()) {
+          await activityTracker.stopTracking().catch(console.error);
+          console.log('Activity tracking stopped due to window close');
+        }
+
         browserWindow = null;
         clearTimeout(timeout);
         rejectOnce(new Error('Window closed'));
@@ -354,6 +370,12 @@ ipcMain.handle('open-url', async (event, url: string) => {
     // Validate URL
     new URL(url);
     await createBrowserWindow(url);
+
+    if (activityTracker) {
+      await activityTracker.startTracking(url);
+      console.log('Activity tracking started for call:', url);
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error in open-url handler:', error);
@@ -363,6 +385,17 @@ ipcMain.handle('open-url', async (event, url: string) => {
     };
   }
 });
+
+ipcMain.handle(
+  'activity-tracker:mouse-click',
+  (event, x: number, y: number, button?: string) => {
+    if (!activityTracker) {
+      return { success: false, error: 'Activity tracker not initialized' };
+    }
+    activityTracker.addMouseClickEvent(x, y, button);
+    return { success: true };
+  }
+);
 
 // Add Chrome command line switches for better video call compatibility
 app.commandLine.appendSwitch('--enable-media-stream');
@@ -403,6 +436,10 @@ app.commandLine.appendSwitch('--allow-running-insecure-content');
 app.commandLine.appendSwitch('--disable-site-isolation-trials');
 
 app.whenReady().then(() => {
+  activityTracker = initializeActivityTracker(
+    join(process.cwd(), 'activity-session.json')
+  );
+
   createMainWindow();
 
   app.on('activate', () => {
@@ -412,7 +449,12 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  // Stop tracking when app closes
+  if (activityTracker) {
+    await activityTracker.stopTracking().catch(console.error);
+  }
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
