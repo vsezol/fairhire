@@ -7,9 +7,9 @@ import {
   VideoCallStrategyFactory,
 } from './strategies/index.js';
 import {
-  initializeActivityTracker,
-  GlobalActivityTracker,
-} from './activity-tracker.js';
+  UnifiedActivityTracker,
+  createSmartAutoAdapter,
+} from './features/activity-tracking/index.js';
 import { screenshotProtectionService } from './features/screenshot-protection/index.js';
 
 const require = createRequire(import.meta.url);
@@ -20,7 +20,7 @@ const __dirname = dirname(__filename);
 
 let mainWindow: BrowserWindow;
 let browserWindow: BrowserWindow | null = null;
-let activityTracker: GlobalActivityTracker;
+let activityTracker: UnifiedActivityTracker;
 
 process.on('unhandledRejection', (reason, promise) => {
   console.log('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -445,9 +445,13 @@ app.commandLine.appendSwitch('--allow-running-insecure-content');
 app.commandLine.appendSwitch('--disable-site-isolation-trials');
 
 app.whenReady().then(async () => {
-  activityTracker = initializeActivityTracker(
-    join(process.cwd(), 'activity-session.json')
-  );
+  const adapter = await createSmartAutoAdapter({
+    jsonOutputPath: join(process.cwd(), 'activity-session.json'),
+    preferSupabase: true, // Попробует Supabase, автоматический fallback на JSON
+  });
+
+  activityTracker = new UnifiedActivityTracker(adapter);
+  await activityTracker.initialize(); // Проверит готовность адаптера
 
   createMainWindow();
 
@@ -461,7 +465,7 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', async () => {
   // Stop tracking when app closes
   if (activityTracker) {
-    await activityTracker.stopTracking().catch(console.error);
+    await activityTracker.destroy().catch(console.error);
   }
 
   screenshotProtectionService.cleanup();

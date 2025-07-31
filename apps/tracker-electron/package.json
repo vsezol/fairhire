@@ -11,7 +11,8 @@
     "email": "team@anticheat.com"
   },
   "dependencies": {
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@supabase/supabase-js": "^2.45.4"
   },
   "build": {
     "appId": "com.fairhire.interview",
