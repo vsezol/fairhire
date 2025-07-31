@@ -38,7 +38,7 @@ export interface WindowGeometry {
   width: number;
   height: number;
   isVisible: boolean;
-  isMinimized: boolean;
+  isFocused: boolean;
 }
 
 export interface ScreenGeometry {

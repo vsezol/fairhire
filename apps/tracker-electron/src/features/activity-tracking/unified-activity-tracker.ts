@@ -92,7 +92,7 @@ export class UnifiedActivityTracker {
 
       const bounds = this.targetWindow.getBounds();
       const isVisible = this.targetWindow.isVisible();
-      const isMinimized = this.targetWindow.isMinimized();
+      const isFocused = this.targetWindow.isFocused();
 
       const windowGeometry: WindowGeometry = {
         x: bounds.x,
@@ -100,7 +100,7 @@ export class UnifiedActivityTracker {
         width: bounds.width,
         height: bounds.height,
         isVisible,
-        isMinimized,
+        isFocused,
       };
 
       return {

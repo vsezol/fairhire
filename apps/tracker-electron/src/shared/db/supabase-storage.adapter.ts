@@ -75,7 +75,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         window_width: session.geometry?.window.width,
         window_height: session.geometry?.window.height,
         window_is_visible: session.geometry?.window.isVisible,
-        window_is_minimized: session.geometry?.window.isMinimized,
+        window_is_focused: session.geometry?.window.isFocused,
       };
 
       const { error } = await this.client.from('sessions').insert(sessionData);
@@ -114,7 +114,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         window_width: session.geometry?.window.width,
         window_height: session.geometry?.window.height,
         window_is_visible: session.geometry?.window.isVisible,
-        window_is_minimized: session.geometry?.window.isMinimized,
+        window_is_focused: session.geometry?.window.isFocused,
       };
 
       const { error } = await this.client
@@ -213,7 +213,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
                   width: sessionData.window_width,
                   height: sessionData.window_height,
                   isVisible: sessionData.window_is_visible ?? true,
-                  isMinimized: sessionData.window_is_minimized ?? false,
+                  isFocused: sessionData.window_is_focused ?? true,
                 },
               }
             : undefined,
@@ -273,7 +273,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
                   width: dbSession.window_width,
                   height: dbSession.window_height,
                   isVisible: dbSession.window_is_visible ?? true,
-                  isMinimized: dbSession.window_is_minimized ?? false,
+                  isFocused: dbSession.window_is_focused ?? true,
                 },
               }
             : undefined,

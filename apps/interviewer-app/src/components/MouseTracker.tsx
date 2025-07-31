@@ -96,7 +96,7 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
                 width: session.window_width,
                 height: session.window_height,
                 isVisible: session.window_is_visible ?? true,
-                isMinimized: session.window_is_minimized ?? false,
+                isFocused: session.window_is_focused ?? true,
               },
             }
           : null;
@@ -135,24 +135,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           ctx.textAlign = 'center';
           ctx.fillText(
             'Hidden Window',
-            windowX + windowWidth / 2,
-            windowY + windowHeight / 2
-          );
-        } else if (sessionGeometry.window.isMinimized) {
-          // Минимизированное окно - синий пунктир
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-          ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
-          ctx.font = '14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(
-            'Minimized Window',
             windowX + windowWidth / 2,
             windowY + windowHeight / 2
           );
@@ -318,28 +300,15 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
   const windowStatus = session
     ? {
         isVisible: session.window_is_visible ?? true,
-        isMinimized: session.window_is_minimized ?? false,
+        isFocused: session.window_is_focused ?? true,
       }
-    : { isVisible: true, isMinimized: false };
+    : { isVisible: true, isFocused: false };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">{t('mouseTracking.title')}</h3>
-          {/* Статус окна */}
-          {!windowStatus.isVisible && (
-            <div className="badge badge-warning gap-2">
-              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-              Window Hidden
-            </div>
-          )}
-          {windowStatus.isMinimized && (
-            <div className="badge badge-info gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              Minimized
-            </div>
-          )}
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
@@ -360,13 +329,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <div
-              className="w-4 h-4 border-2 border-blue-500 bg-blue-100 opacity-70"
-              style={{ borderStyle: 'dashed' }}
-            ></div>
-            <span>Minimized</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
               className="w-4 h-4 border-2 border-gray-500 bg-gray-100 opacity-70"
               style={{ borderStyle: 'dashed' }}
             ></div>
@@ -382,14 +344,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
             {session.window_x || 0}, {session.window_y || 0})
           </span>
         )}
-        <span className="ml-4">
-          Status:{' '}
-          {!windowStatus.isVisible
-            ? 'Hidden'
-            : windowStatus.isMinimized
-            ? 'Minimized'
-            : 'Visible'}
-        </span>
       </div>
       <div
         className={`bg-base-200 rounded-lg p-4 transition-opacity ${

@@ -28,7 +28,7 @@ export interface WindowGeometry {
   width: number;
   height: number;
   isVisible: boolean;
-  isMinimized: boolean;
+  isFocused: boolean;
 }
 
 export interface SessionGeometry {
@@ -55,7 +55,7 @@ export interface Session {
   window_width?: number;
   window_height?: number;
   window_is_visible?: boolean;
-  window_is_minimized?: boolean;
+  window_is_focused?: boolean;
   created_at: string;
   updated_at: string;
   // Вычисляемое поле геометрии

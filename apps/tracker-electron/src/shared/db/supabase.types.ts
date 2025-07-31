@@ -19,7 +19,7 @@ export interface DatabaseSession {
   window_width?: number;
   window_height?: number;
   window_is_visible?: boolean;
-  window_is_minimized?: boolean;
+  window_is_focused?: boolean;
   created_at: string;
   updated_at: string;
 }

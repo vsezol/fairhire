@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   window_width INTEGER,
   window_height INTEGER,
   window_is_visible BOOLEAN DEFAULT TRUE,
-  window_is_minimized BOOLEAN DEFAULT FALSE,
+  window_is_focused BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
