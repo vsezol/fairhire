@@ -66,6 +66,16 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         total_events: session.totalEvents,
         platform: process.platform,
         app_version: app.getVersion(),
+        // Добавляем геометрию
+        screen_width: session.geometry?.screen.width,
+        screen_height: session.geometry?.screen.height,
+        screen_scale_factor: session.geometry?.screen.scaleFactor,
+        window_x: session.geometry?.window.x,
+        window_y: session.geometry?.window.y,
+        window_width: session.geometry?.window.width,
+        window_height: session.geometry?.window.height,
+        window_is_visible: session.geometry?.window.isVisible,
+        window_is_minimized: session.geometry?.window.isMinimized,
       };
 
       const { error } = await this.client.from('sessions').insert(sessionData);
@@ -88,16 +98,28 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
     }
 
     try {
+      const updateData: Partial<DatabaseSession> = {
+        end_time: session.endTime,
+        total_events: session.totalEvents,
+        duration: session.endTime
+          ? session.endTime - session.startTime
+          : undefined,
+        updated_at: new Date().toISOString(),
+        // Обновляем геометрию если она изменилась
+        screen_width: session.geometry?.screen.width,
+        screen_height: session.geometry?.screen.height,
+        screen_scale_factor: session.geometry?.screen.scaleFactor,
+        window_x: session.geometry?.window.x,
+        window_y: session.geometry?.window.y,
+        window_width: session.geometry?.window.width,
+        window_height: session.geometry?.window.height,
+        window_is_visible: session.geometry?.window.isVisible,
+        window_is_minimized: session.geometry?.window.isMinimized,
+      };
+
       const { error } = await this.client
         .from('sessions')
-        .update({
-          end_time: session.endTime,
-          total_events: session.totalEvents,
-          duration: session.endTime
-            ? session.endTime - session.startTime
-            : undefined,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('session_id', session.sessionId);
 
       if (error) {
@@ -174,6 +196,27 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         endTime: sessionData.end_time || undefined,
         callUrl: sessionData.call_url || undefined,
         totalEvents: sessionData.total_events,
+        geometry:
+          sessionData.screen_width &&
+          sessionData.screen_height &&
+          sessionData.window_width &&
+          sessionData.window_height
+            ? {
+                screen: {
+                  width: sessionData.screen_width,
+                  height: sessionData.screen_height,
+                  scaleFactor: sessionData.screen_scale_factor || 1,
+                },
+                window: {
+                  x: sessionData.window_x || 0,
+                  y: sessionData.window_y || 0,
+                  width: sessionData.window_width,
+                  height: sessionData.window_height,
+                  isVisible: sessionData.window_is_visible ?? true,
+                  isMinimized: sessionData.window_is_minimized ?? false,
+                },
+              }
+            : undefined,
       };
 
       const events: ActivityEvent[] = (eventsData || []).map((dbEvent) => ({
@@ -213,6 +256,27 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         endTime: dbSession.end_time || undefined,
         callUrl: dbSession.call_url || undefined,
         totalEvents: dbSession.total_events,
+        geometry:
+          dbSession.screen_width &&
+          dbSession.screen_height &&
+          dbSession.window_width &&
+          dbSession.window_height
+            ? {
+                screen: {
+                  width: dbSession.screen_width,
+                  height: dbSession.screen_height,
+                  scaleFactor: dbSession.screen_scale_factor || 1,
+                },
+                window: {
+                  x: dbSession.window_x || 0,
+                  y: dbSession.window_y || 0,
+                  width: dbSession.window_width,
+                  height: dbSession.window_height,
+                  isVisible: dbSession.window_is_visible ?? true,
+                  isMinimized: dbSession.window_is_minimized ?? false,
+                },
+              }
+            : undefined,
       }));
     } catch (error) {
       console.error('❌ Supabase: Failed to get sessions by callUrl:', error);

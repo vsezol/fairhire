@@ -9,6 +9,16 @@ CREATE TABLE IF NOT EXISTS sessions (
   duration BIGINT,
   platform VARCHAR(50) NOT NULL,
   app_version VARCHAR(50) NOT NULL,
+  -- Новые поля для геометрии
+  screen_width INTEGER,
+  screen_height INTEGER,
+  screen_scale_factor REAL,
+  window_x INTEGER,
+  window_y INTEGER,
+  window_width INTEGER,
+  window_height INTEGER,
+  window_is_visible BOOLEAN DEFAULT TRUE,
+  window_is_minimized BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

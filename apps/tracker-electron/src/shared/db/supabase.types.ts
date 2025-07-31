@@ -10,6 +10,16 @@ export interface DatabaseSession {
   duration?: number;
   platform: string;
   app_version: string;
+  // Новые поля для геометрии
+  screen_width?: number;
+  screen_height?: number;
+  screen_scale_factor?: number;
+  window_x?: number;
+  window_y?: number;
+  window_width?: number;
+  window_height?: number;
+  window_is_visible?: boolean;
+  window_is_minimized?: boolean;
   created_at: string;
   updated_at: string;
 }

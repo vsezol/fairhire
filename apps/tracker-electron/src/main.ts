@@ -381,7 +381,7 @@ ipcMain.handle('open-url', async (event, url: string) => {
     await createBrowserWindow(url);
 
     if (activityTracker) {
-      await activityTracker.startTracking(url);
+      await activityTracker.startTracking(url, browserWindow!);
       console.log('Activity tracking started for call:', url);
     }
 

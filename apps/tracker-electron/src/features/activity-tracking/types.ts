@@ -31,6 +31,27 @@ export interface PageNavigateData {
   title?: string;
 }
 
+// Новые типы для геометрии окна и экрана
+export interface WindowGeometry {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isVisible: boolean;
+  isMinimized: boolean;
+}
+
+export interface ScreenGeometry {
+  width: number;
+  height: number;
+  scaleFactor: number;
+}
+
+export interface SessionGeometry {
+  screen: ScreenGeometry;
+  window: WindowGeometry;
+}
+
 // Union type для всех событий активности
 export type ActivityEvent =
   | { type: 'mouse_move'; timestamp: number; data: MouseMoveData }
@@ -49,4 +70,5 @@ export interface ActivitySession {
   endTime?: number;
   callUrl?: string;
   totalEvents: number;
+  geometry?: SessionGeometry;
 }

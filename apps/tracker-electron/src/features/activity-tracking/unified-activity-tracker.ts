@@ -9,6 +9,9 @@ import {
   IdleStartData,
   IdleEndData,
   PageNavigateData,
+  SessionGeometry,
+  WindowGeometry,
+  ScreenGeometry,
 } from './types.js';
 
 export class UnifiedActivityTracker {
@@ -22,6 +25,8 @@ export class UnifiedActivityTracker {
   };
   private mouseInterval: NodeJS.Timeout | null = null;
   private idleCheckInterval: NodeJS.Timeout | null = null;
+  private geometryUpdateInterval: NodeJS.Timeout | null = null;
+  private targetWindow: BrowserWindow | null = null;
 
   constructor(private storageAdapter: StorageAdapter) {
     this.setupGlobalEventListeners();
@@ -64,7 +69,97 @@ export class UnifiedActivityTracker {
     console.log('✅ Unified Activity Tracker initialized');
   }
 
-  public async startTracking(callUrl: string): Promise<void> {
+  /**
+   * Получает геометрию экрана и окна приложения
+   */
+  private getSessionGeometry(): SessionGeometry | undefined {
+    try {
+      // Получаем информацию о экране
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const screenGeometry: ScreenGeometry = {
+        width: primaryDisplay.bounds.width,
+        height: primaryDisplay.bounds.height,
+        scaleFactor: primaryDisplay.scaleFactor,
+      };
+
+      console.log('🔄 Screen geometry:', screenGeometry);
+
+      // Получаем информацию только о целевом окне
+      if (!this.targetWindow || this.targetWindow.isDestroyed()) {
+        // Не выводим предупреждение в консоль, просто возвращаем undefined
+        return undefined;
+      }
+
+      const bounds = this.targetWindow.getBounds();
+      const isVisible = this.targetWindow.isVisible();
+      const isMinimized = this.targetWindow.isMinimized();
+
+      const windowGeometry: WindowGeometry = {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        isVisible,
+        isMinimized,
+      };
+
+      return {
+        screen: screenGeometry,
+        window: windowGeometry,
+      };
+    } catch (error) {
+      console.error('❌ Error getting session geometry:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Проверяет и обновляет геометрию сессии если она изменилась
+   */
+  private async updateSessionGeometry(): Promise<void> {
+    if (!this.session) return;
+
+    // Не пытаемся получить геометрию если нет целевого окна
+    if (!this.targetWindow || this.targetWindow.isDestroyed()) {
+      return;
+    }
+
+    this.session.geometry = this.getSessionGeometry();
+
+    // Сохраняем изменения в хранилище
+    try {
+      await this.storageAdapter.updateSession(this.session);
+      console.log('✅ Session geometry updated in storage');
+    } catch (error) {
+      console.error('❌ Failed to update session geometry:', error);
+    }
+  }
+
+  /**
+   * Запускает периодическую проверку геометрии
+   */
+  private startGeometryMonitoring(): void {
+    // Проверяем геометрию каждые 5 секунд (реже чем было)
+    // и только если есть целевое окно
+    this.geometryUpdateInterval = setInterval(() => {
+      if (
+        this.isTracking &&
+        this.targetWindow &&
+        !this.targetWindow.isDestroyed()
+      ) {
+        this.updateSessionGeometry().catch(console.error);
+      }
+    }, 5000);
+
+    console.log('📐 Geometry monitoring started');
+  }
+
+  public async startTracking(
+    callUrl: string,
+    targetWindow?: BrowserWindow
+  ): Promise<void> {
+    this.targetWindow = targetWindow || null;
+
     if (this.isTracking) {
       console.log('Tracking already active');
       return;
@@ -74,11 +169,15 @@ export class UnifiedActivityTracker {
       throw new Error('Storage adapter not initialized');
     }
 
+    // Получаем геометрию сессии
+    const geometry = this.getSessionGeometry();
+
     this.session = {
       sessionId: v7(),
       startTime: Date.now(),
       callUrl,
       totalEvents: 0,
+      geometry,
     };
 
     // Создаем сессию в хранилище
@@ -89,6 +188,7 @@ export class UnifiedActivityTracker {
 
     this.startMouseTracking();
     this.startIdleDetection();
+    this.startGeometryMonitoring();
     this.addAppFocusEvent();
 
     console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
@@ -109,6 +209,11 @@ export class UnifiedActivityTracker {
     if (this.idleCheckInterval) {
       clearInterval(this.idleCheckInterval);
       this.idleCheckInterval = null;
+    }
+
+    if (this.geometryUpdateInterval) {
+      clearInterval(this.geometryUpdateInterval);
+      this.geometryUpdateInterval = null;
     }
 
     this.addAppBlurEvent();
@@ -294,8 +399,6 @@ export class UnifiedActivityTracker {
   }
 
   public setupMouseClickTracking(browserWindow: BrowserWindow): void {
-    console.log('🖱️ Setting up mouse click tracking for browser window');
-
     // Инжектируем скрипт для отслеживания кликов мыши
     const mouseClickScript = `
       console.log('🖱️ Mouse click tracking injected');

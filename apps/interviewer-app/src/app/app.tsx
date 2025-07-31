@@ -29,6 +29,11 @@ export function App() {
     isUpdating: activitiesUpdating,
   } = useActivities(selectedSessionId);
 
+  // Находим выбранную сессию
+  const selectedSession = sessions.find(
+    (session) => session.session_id === selectedSessionId
+  );
+
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ru' : 'en';
     i18n.changeLanguage(newLang);
@@ -91,7 +96,7 @@ export function App() {
               />
             </div>
             <div className="lg:w-100">
-              <MouseTracker activities={activities} />
+              <MouseTracker activities={activities} session={selectedSession} />
             </div>
           </div>
         )}

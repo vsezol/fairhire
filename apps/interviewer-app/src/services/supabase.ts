@@ -15,6 +15,27 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Типы геометрии
+export interface ScreenGeometry {
+  width: number;
+  height: number;
+  scaleFactor: number;
+}
+
+export interface WindowGeometry {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isVisible: boolean;
+  isMinimized: boolean;
+}
+
+export interface SessionGeometry {
+  screen: ScreenGeometry;
+  window: WindowGeometry;
+}
+
 export interface Session {
   id: string;
   session_id: string;
@@ -25,8 +46,20 @@ export interface Session {
   duration?: number;
   platform: string;
   app_version: string;
+  // Новые поля геометрии
+  screen_width?: number;
+  screen_height?: number;
+  screen_scale_factor?: number;
+  window_x?: number;
+  window_y?: number;
+  window_width?: number;
+  window_height?: number;
+  window_is_visible?: boolean;
+  window_is_minimized?: boolean;
   created_at: string;
   updated_at: string;
+  // Вычисляемое поле геометрии
+  geometry?: SessionGeometry;
 }
 
 // Типы для различных событий
