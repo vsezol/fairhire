@@ -4,9 +4,6 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/api"
-    },
-    {
       "path": "./apps/tracker-electron"
     },
     {
