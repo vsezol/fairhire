@@ -23,7 +23,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
   constructor(private config: SupabaseStorageConfig) {
     super();
     this.BATCH_SIZE = config.batchSize || 50;
-    this.BATCH_TIMEOUT = config.batchTimeout || 5000; // 5 секунд
+    this.BATCH_TIMEOUT = config.batchTimeout || 3000;
   }
 
   public async initialize(): Promise<void> {
@@ -105,7 +105,6 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
           ? session.endTime - session.startTime
           : undefined,
         updated_at: new Date().toISOString(),
-        // Обновляем геометрию если она изменилась
         screen_width: session.geometry?.screen.width,
         screen_height: session.geometry?.screen.height,
         screen_scale_factor: session.geometry?.screen.scaleFactor,
@@ -154,136 +153,6 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
     }
   }
 
-  public async getSessionWithEvents(sessionId: string): Promise<{
-    session: ActivitySession | null;
-    events: ActivityEvent[];
-  }> {
-    if (!this.initialized || !this.client) {
-      throw new Error('Storage adapter not initialized');
-    }
-
-    try {
-      // Получаем сессию
-      const { data: sessionData, error: sessionError } = await this.client
-        .from('sessions')
-        .select('*')
-        .eq('session_id', sessionId)
-        .single();
-
-      if (sessionError) {
-        if (sessionError.code === 'PGRST116') {
-          // Сессия не найдена
-          return { session: null, events: [] };
-        }
-        throw new Error(sessionError.message);
-      }
-
-      // Получаем события
-      const { data: eventsData, error: eventsError } = await this.client
-        .from('user_activities')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('timestamp', { ascending: true });
-
-      if (eventsError) {
-        throw new Error(eventsError.message);
-      }
-
-      // Преобразуем данные в формат ActivitySession и ActivityEvent
-      const session: ActivitySession = {
-        sessionId: sessionData.session_id,
-        startTime: sessionData.start_time,
-        endTime: sessionData.end_time || undefined,
-        callUrl: sessionData.call_url || undefined,
-        totalEvents: sessionData.total_events,
-        geometry:
-          sessionData.screen_width &&
-          sessionData.screen_height &&
-          sessionData.window_width &&
-          sessionData.window_height
-            ? {
-                screen: {
-                  width: sessionData.screen_width,
-                  height: sessionData.screen_height,
-                  scaleFactor: sessionData.screen_scale_factor || 1,
-                },
-                window: {
-                  x: sessionData.window_x || 0,
-                  y: sessionData.window_y || 0,
-                  width: sessionData.window_width,
-                  height: sessionData.window_height,
-                  isVisible: sessionData.window_is_visible ?? true,
-                  isFocused: sessionData.window_is_focused ?? true,
-                },
-              }
-            : undefined,
-      };
-
-      const events: ActivityEvent[] = (eventsData || []).map((dbEvent) => ({
-        type: dbEvent.event_type as ActivityEvent['type'],
-        timestamp: dbEvent.timestamp,
-        data: dbEvent.event_data,
-      }));
-
-      return { session, events };
-    } catch (error) {
-      console.error('❌ Supabase: Failed to get session with events:', error);
-      throw error;
-    }
-  }
-
-  public async getSessionsByCallUrl(
-    callUrl: string
-  ): Promise<ActivitySession[]> {
-    if (!this.initialized || !this.client) {
-      throw new Error('Storage adapter not initialized');
-    }
-
-    try {
-      const { data, error } = await this.client
-        .from('sessions')
-        .select('*')
-        .eq('call_url', callUrl)
-        .order('start_time', { ascending: false });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return (data || []).map((dbSession) => ({
-        sessionId: dbSession.session_id,
-        startTime: dbSession.start_time,
-        endTime: dbSession.end_time || undefined,
-        callUrl: dbSession.call_url || undefined,
-        totalEvents: dbSession.total_events,
-        geometry:
-          dbSession.screen_width &&
-          dbSession.screen_height &&
-          dbSession.window_width &&
-          dbSession.window_height
-            ? {
-                screen: {
-                  width: dbSession.screen_width,
-                  height: dbSession.screen_height,
-                  scaleFactor: dbSession.screen_scale_factor || 1,
-                },
-                window: {
-                  x: dbSession.window_x || 0,
-                  y: dbSession.window_y || 0,
-                  width: dbSession.window_width,
-                  height: dbSession.window_height,
-                  isVisible: dbSession.window_is_visible ?? true,
-                  isFocused: dbSession.window_is_focused ?? true,
-                },
-              }
-            : undefined,
-      }));
-    } catch (error) {
-      console.error('❌ Supabase: Failed to get sessions by callUrl:', error);
-      throw error;
-    }
-  }
-
   public async destroy(): Promise<void> {
     // Отправляем оставшиеся события
     if (this.batchBuffer.length > 0) {
@@ -302,7 +171,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
 
   private scheduleBatchFlush(): void {
     if (this.batchTimeout) {
-      return; // Таймер уже установлен
+      return;
     }
 
     this.batchTimeout = setTimeout(() => {

@@ -82,8 +82,6 @@ export class UnifiedActivityTracker {
         scaleFactor: primaryDisplay.scaleFactor,
       };
 
-      console.log('🔄 Screen geometry:', screenGeometry);
-
       // Получаем информацию только о целевом окне
       if (!this.targetWindow || this.targetWindow.isDestroyed()) {
         // Не выводим предупреждение в консоль, просто возвращаем undefined
@@ -491,20 +489,6 @@ export class UnifiedActivityTracker {
 
     this.updateActivity();
     this.addMouseClickEventInternal({ x, y, button });
-  }
-
-  // Дополнительные методы для работы с адаптером
-  public async getSessionWithEvents(sessionId: string): Promise<{
-    session: ActivitySession | null;
-    events: ActivityEvent[];
-  }> {
-    return await this.storageAdapter.getSessionWithEvents(sessionId);
-  }
-
-  public async getSessionsByCallUrl(
-    callUrl: string
-  ): Promise<ActivitySession[]> {
-    return await this.storageAdapter.getSessionsByCallUrl(callUrl);
   }
 
   public getCurrentSession(): ActivitySession | null {

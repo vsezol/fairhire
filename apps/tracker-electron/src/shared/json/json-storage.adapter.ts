@@ -139,35 +139,6 @@ export class JsonStorageAdapter extends BaseStorageAdapter {
     }
   }
 
-  public async getSessionWithEvents(sessionId: string): Promise<{
-    session: ActivitySession | null;
-    events: ActivityEvent[];
-  }> {
-    const session = this.sessionsIndex.get(sessionId) || null;
-    const events = this.eventsBySession.get(sessionId) || [];
-
-    return { session, events };
-  }
-
-  public async getSessionsByCallUrl(
-    callUrl: string
-  ): Promise<ActivitySession[]> {
-    const sessionIds = this.sessionsByCallUrl.get(callUrl);
-    if (!sessionIds) {
-      return [];
-    }
-
-    const sessions: ActivitySession[] = [];
-    for (const sessionId of sessionIds) {
-      const session = this.sessionsIndex.get(sessionId);
-      if (session) {
-        sessions.push(session);
-      }
-    }
-
-    return sessions;
-  }
-
   public async destroy(): Promise<void> {
     // Сохраняем финальное состояние всех сессий
     for (const session of this.sessionsIndex.values()) {

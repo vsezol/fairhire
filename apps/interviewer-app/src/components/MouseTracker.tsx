@@ -20,7 +20,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
 }) => {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -29,243 +28,263 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    setIsDrawing(true);
+    // Extract mouse events
+    const mouseEvents: MouseEvent[] = [];
 
-    // Small delay to show the drawing animation
-    const drawTimeout = setTimeout(() => {
-      // Extract mouse events
-      const mouseEvents: MouseEvent[] = [];
-
-      activities.forEach((activity) => {
-        if (
-          activity.event_type === 'mouse_move' &&
-          activity.event_data &&
-          typeof activity.event_data === 'object' &&
-          'x' in activity.event_data &&
-          'y' in activity.event_data &&
-          typeof activity.event_data.x === 'number' &&
-          typeof activity.event_data.y === 'number'
-        ) {
-          mouseEvents.push({
-            x: activity.event_data.x,
-            y: activity.event_data.y,
-            timestamp: activity.timestamp,
-            type: 'move',
-          });
-        } else if (
-          activity.event_type === 'mouse_click' &&
-          activity.event_data &&
-          typeof activity.event_data === 'object' &&
-          'x' in activity.event_data &&
-          'y' in activity.event_data &&
-          'button' in activity.event_data &&
-          typeof activity.event_data.x === 'number' &&
-          typeof activity.event_data.y === 'number'
-        ) {
-          mouseEvents.push({
-            x: activity.event_data.x,
-            y: activity.event_data.y,
-            timestamp: activity.timestamp,
-            type:
-              activity.event_data.button === 'left'
-                ? 'left_click'
-                : 'right_click',
-          });
-        }
-      });
-
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Получаем геометрию сессии
-      const sessionGeometry =
-        session &&
-        session.screen_width &&
-        session.screen_height &&
-        session.window_width &&
-        session.window_height
-          ? {
-              screen: {
-                width: session.screen_width,
-                height: session.screen_height,
-                scaleFactor: session.screen_scale_factor || 1,
-              },
-              window: {
-                x: session.window_x || 0,
-                y: session.window_y || 0,
-                width: session.window_width,
-                height: session.window_height,
-                isVisible: session.window_is_visible ?? true,
-                isFocused: session.window_is_focused ?? true,
-              },
-            }
-          : null;
-
-      // Canvas представляет экран пользователя
-      // Масштабируем координаты относительно размеров canvas
-      let scaleX = 1;
-      let scaleY = 1;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (sessionGeometry) {
-        // Есть данные о геометрии - используем их
-        scaleX = canvas.width / sessionGeometry.screen.width;
-        scaleY = canvas.height / sessionGeometry.screen.height;
-
-        // Рисуем окно приложения относительно canvas (который представляет экран)
-        const windowX = sessionGeometry.window.x * scaleX;
-        const windowY = sessionGeometry.window.y * scaleY;
-        const windowWidth = sessionGeometry.window.width * scaleX;
-        const windowHeight = sessionGeometry.window.height * scaleY;
-
-        // Разные цвета в зависимости от статуса окна
-        if (!sessionGeometry.window.isVisible) {
-          // Скрытое окно - серый пунктир
-          ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
-          ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.strokeStyle = 'rgba(128, 128, 128, 0.6)';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([10, 5]);
-          ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
-          ctx.font = '14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(
-            'Hidden Window',
-            windowX + windowWidth / 2,
-            windowY + windowHeight / 2
-          );
-        } else {
-          // Видимое окно - зеленый
-          ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
-          ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([]);
-          ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
-
-          ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
-          ctx.font = '14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(
-            'App Window',
-            windowX + windowWidth / 2,
-            windowY + windowHeight / 2
-          );
-        }
-      } else if (mouseEvents.length > 0) {
-        // Fallback: масштабируем по координатам мыши если нет данных о геометрии
-        const maxX = Math.max(...mouseEvents.map((e) => e.x));
-        const maxY = Math.max(...mouseEvents.map((e) => e.y));
-        const minX = Math.min(...mouseEvents.map((e) => e.x));
-        const minY = Math.min(...mouseEvents.map((e) => e.y));
-
-        const rangeX = maxX - minX + 100; // добавляем отступы
-        const rangeY = maxY - minY + 100;
-
-        scaleX = (canvas.width - 100) / rangeX;
-        scaleY = (canvas.height - 100) / rangeY;
-        const scale = Math.min(scaleX, scaleY, 1); // не увеличиваем, только уменьшаем
-
-        scaleX = scale;
-        scaleY = scale;
-        offsetX = 50 - minX * scale;
-        offsetY = 50 - minY * scale;
-      }
-
-      if (mouseEvents.length === 0) {
-        setIsDrawing(false);
-        return;
-      }
-
-      // Sort by timestamp
-      mouseEvents.sort((a, b) => a.timestamp - b.timestamp);
-
-      // Draw movement path
-      const moveEvents = mouseEvents.filter((e) => e.type === 'move');
-      if (moveEvents.length > 1) {
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)'; // blue with opacity
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.setLineDash([]);
-
-        ctx.beginPath();
-        moveEvents.forEach((event, index) => {
-          let x, y;
-          if (sessionGeometry) {
-            // Mouse move события - это глобальные координаты экрана
-            x = event.x * scaleX;
-            y = event.y * scaleY;
-          } else {
-            // Fallback случай - масштабирование + смещение
-            x = event.x * scaleX + offsetX;
-            y = event.y * scaleY + offsetY;
-          }
-
-          if (index === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+    activities.forEach((activity) => {
+      if (
+        activity.event_type === 'mouse_move' &&
+        activity.event_data &&
+        typeof activity.event_data === 'object' &&
+        'x' in activity.event_data &&
+        'y' in activity.event_data &&
+        typeof activity.event_data.x === 'number' &&
+        typeof activity.event_data.y === 'number'
+      ) {
+        mouseEvents.push({
+          x: activity.event_data.x,
+          y: activity.event_data.y,
+          timestamp: activity.timestamp,
+          type: 'move',
         });
-        ctx.stroke();
+      } else if (
+        activity.event_type === 'mouse_click' &&
+        activity.event_data &&
+        typeof activity.event_data === 'object' &&
+        'x' in activity.event_data &&
+        'y' in activity.event_data &&
+        'button' in activity.event_data &&
+        typeof activity.event_data.x === 'number' &&
+        typeof activity.event_data.y === 'number'
+      ) {
+        mouseEvents.push({
+          x: activity.event_data.x,
+          y: activity.event_data.y,
+          timestamp: activity.timestamp,
+          type:
+            activity.event_data.button === 'left'
+              ? 'left_click'
+              : 'right_click',
+        });
       }
+    });
 
-      // Draw clicks - клики относительно окна приложения
-      const clickEvents = mouseEvents.filter((e) => e.type !== 'move');
-      clickEvents.forEach((event) => {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Получаем геометрию сессии
+    const sessionGeometry =
+      session &&
+      session.screen_width &&
+      session.screen_height &&
+      session.window_width &&
+      session.window_height
+        ? {
+            screen: {
+              width: session.screen_width,
+              height: session.screen_height,
+              scaleFactor: session.screen_scale_factor || 1,
+            },
+            window: {
+              x: session.window_x || 0,
+              y: session.window_y || 0,
+              width: session.window_width,
+              height: session.window_height,
+              isVisible: session.window_is_visible ?? true,
+              isFocused: session.window_is_focused ?? true,
+            },
+          }
+        : null;
+
+    // Canvas представляет экран пользователя
+    // Масштабируем координаты относительно размеров canvas
+    let scaleX = 1;
+    let scaleY = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (sessionGeometry) {
+      // Есть данные о геометрии - используем их
+      scaleX = canvas.width / sessionGeometry.screen.width;
+      scaleY = canvas.height / sessionGeometry.screen.height;
+
+      // Рисуем окно приложения относительно canvas (который представляет экран)
+      const windowX = sessionGeometry.window.x * scaleX;
+      const windowY = sessionGeometry.window.y * scaleY;
+      const windowWidth = sessionGeometry.window.width * scaleX;
+      const windowHeight = sessionGeometry.window.height * scaleY;
+
+      // Разные цвета в зависимости от статуса окна
+      if (!sessionGeometry.window.isVisible) {
+        // Скрытое окно - серый пунктир
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
+        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 5]);
+        ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          'Hidden Window',
+          windowX + windowWidth / 2,
+          windowY + windowHeight / 2
+        );
+      } else if (!sessionGeometry.window.isFocused) {
+        // Видимое, но не в фокусе окно - серый с блюром
+        ctx.fillStyle = 'rgba(107, 114, 128, 0.15)';
+        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.strokeStyle = 'rgba(107, 114, 128, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
+
+        // Добавляем эффект "блюра" через полупрозрачные слои
+        ctx.fillStyle = 'rgba(107, 114, 128, 0.1)';
+        ctx.fillRect(
+          windowX + 2,
+          windowY + 2,
+          windowWidth - 4,
+          windowHeight - 4
+        );
+        ctx.fillRect(
+          windowX + 4,
+          windowY + 4,
+          windowWidth - 8,
+          windowHeight - 8
+        );
+
+        ctx.fillStyle = 'rgba(107, 114, 128, 0.9)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          'Out of Focus',
+          windowX + windowWidth / 2,
+          windowY + windowHeight / 2
+        );
+      } else {
+        // Видимое окно в фокусе - зеленый
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
+        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          'App Window',
+          windowX + windowWidth / 2,
+          windowY + windowHeight / 2
+        );
+      }
+    } else if (mouseEvents.length > 0) {
+      // Fallback: масштабируем по координатам мыши если нет данных о геометрии
+      const maxX = Math.max(...mouseEvents.map((e) => e.x));
+      const maxY = Math.max(...mouseEvents.map((e) => e.y));
+      const minX = Math.min(...mouseEvents.map((e) => e.x));
+      const minY = Math.min(...mouseEvents.map((e) => e.y));
+
+      const rangeX = maxX - minX + 100; // добавляем отступы
+      const rangeY = maxY - minY + 100;
+
+      scaleX = (canvas.width - 100) / rangeX;
+      scaleY = (canvas.height - 100) / rangeY;
+      const scale = Math.min(scaleX, scaleY, 1); // не увеличиваем, только уменьшаем
+
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = 50 - minX * scale;
+      offsetY = 50 - minY * scale;
+    }
+
+    if (mouseEvents.length === 0) {
+      return;
+    }
+
+    // Sort by timestamp
+    mouseEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Draw movement path
+    const moveEvents = mouseEvents.filter((e) => e.type === 'move');
+    if (moveEvents.length > 1) {
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)'; // blue with opacity
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      moveEvents.forEach((event, index) => {
         let x, y;
         if (sessionGeometry) {
-          // Клики приходят с координатами относительно окна браузера (clientX, clientY)
-          // Нужно их позиционировать внутри прямоугольника окна на canvas
-          const windowX = sessionGeometry.window.x * scaleX;
-          const windowY = sessionGeometry.window.y * scaleY;
-
-          // Масштабируем клик относительно размеров окна на canvas
-          const windowCanvasWidth = sessionGeometry.window.width * scaleX;
-          const windowCanvasHeight = sessionGeometry.window.height * scaleY;
-
-          x =
-            windowX +
-            (event.x / sessionGeometry.window.width) * windowCanvasWidth;
-          y =
-            windowY +
-            (event.y / sessionGeometry.window.height) * windowCanvasHeight;
+          // Mouse move события - это глобальные координаты экрана
+          x = event.x * scaleX;
+          y = event.y * scaleY;
         } else {
           // Fallback случай - масштабирование + смещение
           x = event.x * scaleX + offsetX;
           y = event.y * scaleY + offsetY;
         }
 
-        ctx.beginPath();
-        ctx.arc(x, y, 8, 0, 2 * Math.PI);
-
-        if (event.type === 'left_click') {
-          ctx.fillStyle = 'rgba(34, 197, 94, 0.7)'; // green for left click
+        if (index === 0) {
+          ctx.moveTo(x, y);
         } else {
-          ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; // red for right click
+          ctx.lineTo(x, y);
         }
-
-        ctx.fill();
-
-        // Add border
-        ctx.strokeStyle = event.type === 'left_click' ? '#22c55e' : '#ef4444';
-        ctx.lineWidth = 2;
-        ctx.stroke();
       });
+      ctx.stroke();
+    }
 
-      setIsDrawing(false);
-    }, 200);
+    // Draw clicks - клики относительно окна приложения
+    const clickEvents = mouseEvents.filter((e) => e.type !== 'move');
+    clickEvents.forEach((event) => {
+      let x, y;
+      if (sessionGeometry) {
+        // Клики приходят с координатами относительно окна браузера (clientX, clientY)
+        // Нужно их позиционировать внутри прямоугольника окна на canvas
+        const windowX = sessionGeometry.window.x * scaleX;
+        const windowY = sessionGeometry.window.y * scaleY;
 
-    return () => {
-      clearTimeout(drawTimeout);
-      setIsDrawing(false);
-    };
+        // Масштабируем клик относительно размеров окна на canvas
+        const windowCanvasWidth = sessionGeometry.window.width * scaleX;
+        const windowCanvasHeight = sessionGeometry.window.height * scaleY;
+
+        x =
+          windowX +
+          (event.x / sessionGeometry.window.width) * windowCanvasWidth;
+        y =
+          windowY +
+          (event.y / sessionGeometry.window.height) * windowCanvasHeight;
+      } else {
+        // Fallback случай - масштабирование + смещение
+        x = event.x * scaleX + offsetX;
+        y = event.y * scaleY + offsetY;
+      }
+
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, 2 * Math.PI);
+
+      if (event.type === 'left_click') {
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.7)'; // green for left click
+      } else {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; // red for right click
+      }
+
+      ctx.fill();
+
+      // Add border
+      ctx.strokeStyle = event.type === 'left_click' ? '#22c55e' : '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
   }, [activities, session]);
 
   const mouseActivities = activities.filter(
@@ -325,7 +344,11 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-green-500 bg-green-100 opacity-70"></div>
-            <span>Visible Window</span>
+            <span>Focused Window</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-gray-500 bg-gray-100 opacity-70"></div>
+            <span>Out of Focus</span>
           </div>
           <div className="flex items-center gap-2">
             <div
@@ -345,17 +368,17 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           </span>
         )}
       </div>
-      <div
-        className={`bg-base-200 rounded-lg p-4 transition-opacity ${
-          isDrawing ? 'opacity-75' : 'opacity-100'
-        }`}
-      >
+      <div className={`bg-base-200 rounded-lg p-4 transition-opacity`}>
         <canvas
           ref={canvasRef}
           width={canvasWidth}
           height={canvasHeight}
           className={`w-full h-auto max-w-full rounded ${
-            !windowStatus.isVisible ? 'bg-gray-700' : 'bg-gray-900'
+            !windowStatus.isVisible
+              ? 'bg-gray-700'
+              : !windowStatus.isFocused
+              ? 'bg-gray-800'
+              : 'bg-gray-900'
           }`}
           style={{
             aspectRatio: `${sessionGeometry.width}/${sessionGeometry.height}`,
@@ -364,6 +387,11 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
         {!windowStatus.isVisible && (
           <div className="text-center mt-2 text-sm text-orange-400">
             ⚠️ Application window was hidden during this session
+          </div>
+        )}
+        {windowStatus.isVisible && !windowStatus.isFocused && (
+          <div className="text-center mt-2 text-sm text-yellow-400">
+            ⚠️ Application window was out of focus during this session
           </div>
         )}
       </div>

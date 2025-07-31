@@ -88,7 +88,7 @@ export const useActivities = (sessionId: string | null) => {
     // Set up interval for periodic updates every 5 seconds
     const intervalId = setInterval(() => {
       fetchNewActivities();
-    }, 5000);
+    }, 3000);
 
     // Set up real-time updates for new activities via Supabase
     const channel = supabase
