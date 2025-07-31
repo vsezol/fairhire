@@ -45,15 +45,8 @@ export class ScreenshotProtectionService {
 
   private applyMacOSProtection(window: BrowserWindow): void {
     try {
-      // window.setVibrancy('ultra-dark'); // TODO
-
-      // Убираем тень (может помочь против некоторых инструментов)
       window.setHasShadow(false);
-
-      // Минимальная прозрачность
       window.setOpacity(0.99);
-
-      // Скрываем от системных API
       window.setVisibleOnAllWorkspaces(false);
 
       console.log('✅ macOS screenshot protection applied');
@@ -64,7 +57,6 @@ export class ScreenshotProtectionService {
 
   private applyWindowsProtection(window: BrowserWindow): void {
     try {
-      // Отключаем фоновое ограничение (может помочь с захватом)
       window.webContents.setBackgroundThrottling(false);
 
       console.log('✅ Windows screenshot protection applied');
