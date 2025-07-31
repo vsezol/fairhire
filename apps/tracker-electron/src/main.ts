@@ -10,6 +10,7 @@ import {
   initializeActivityTracker,
   GlobalActivityTracker,
 } from './activity-tracker.js';
+import { screenshotProtectionService } from './features/screenshot-protection/index.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
@@ -39,6 +40,8 @@ function createMainWindow(): void {
     maximizable: false,
     title: titleWithVersion('FairHire Interview'),
   });
+
+  screenshotProtectionService.protectWindow(mainWindow);
 
   // Определяем путь к HTML файлу в зависимости от режима (dev/prod)
   const appPath = join(__dirname, '../../tracker-app/dist/index.html');
@@ -225,6 +228,12 @@ async function createWindow(
     shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  // Защищаем браузерное окно от скриншотов
+  if (browserWindow) {
+    screenshotProtectionService.protectWindow(browserWindow);
+    console.log('🛡️ Browser window protected from screenshots');
+  }
 
   // Промис для отслеживания успешной загрузки
   return new Promise((resolve, reject) => {
@@ -435,7 +444,7 @@ app.commandLine.appendSwitch('--disable-web-security');
 app.commandLine.appendSwitch('--allow-running-insecure-content');
 app.commandLine.appendSwitch('--disable-site-isolation-trials');
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   activityTracker = initializeActivityTracker(
     join(process.cwd(), 'activity-session.json')
   );
@@ -455,9 +464,15 @@ app.on('window-all-closed', async () => {
     await activityTracker.stopTracking().catch(console.error);
   }
 
+  screenshotProtectionService.cleanup();
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  screenshotProtectionService.cleanup();
 });
 
 // Security: Prevent new window creation except through our handler

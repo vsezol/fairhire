@@ -1,6 +1,6 @@
 {
   "name": "@anticheat-interview/tracker-electron",
-  "version": "0.0.18",
+  "version": "0.0.20",
   "private": true,
   "type": "module",
   "main": "dist/main.js",
@@ -9,6 +9,9 @@
   "author": {
     "name": "FairHire Team",
     "email": "team@anticheat.com"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
   },
   "build": {
     "appId": "com.fairhire.interview",
@@ -149,14 +152,6 @@
           "win": {
             "commands": [
               "electron-builder --win --publish=never"
-            ]
-          },
-          "linux": {
-            "commands": [
-              "mkdir -p ../../release/@anticheat-interview",
-              "electron-builder --linux --publish=never",
-              "cp -R ../../release/@anticheat-interview/* ../../release/",
-              "rm -rf ../../release/@anticheat-interview"
             ]
           }
         }
