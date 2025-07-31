@@ -1,4 +1,4 @@
-import { ActivityEvent } from '../../activity-tracker';
+import { ActivityEvent } from '../../features/activity-tracking/types';
 
 export interface DatabaseSession {
   id: string;

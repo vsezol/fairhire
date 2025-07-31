@@ -9,7 +9,7 @@ import {
   IdleStartData,
   IdleEndData,
   PageNavigateData,
-} from '../../activity-tracker.js';
+} from './types.js';
 
 export class UnifiedActivityTracker {
   private session: ActivitySession | null = null;

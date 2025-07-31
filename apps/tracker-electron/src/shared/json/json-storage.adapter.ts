@@ -1,5 +1,8 @@
 import { promises as fs } from 'fs';
-import { ActivityEvent, ActivitySession } from '../../activity-tracker.js';
+import {
+  ActivityEvent,
+  ActivitySession,
+} from '../../features/activity-tracking/types.js';
 import { BaseStorageAdapter } from '../../features/activity-tracking/storage-adapter.interface.js';
 
 export interface JsonStorageConfig {

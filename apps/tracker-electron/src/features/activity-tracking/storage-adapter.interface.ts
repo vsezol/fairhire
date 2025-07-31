@@ -1,4 +1,4 @@
-import { ActivityEvent, ActivitySession } from '../../activity-tracker';
+import { ActivityEvent, ActivitySession } from './types';
 
 // Интерфейс для адаптеров сохранения
 export interface StorageAdapter {

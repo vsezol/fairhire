@@ -1,5 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ActivityEvent, ActivitySession } from '../../activity-tracker.js';
+import {
+  ActivityEvent,
+  ActivitySession,
+} from '../../features/activity-tracking/types.js';
 import { BaseStorageAdapter } from '../../features/activity-tracking/storage-adapter.interface.js';
 import { DatabaseSession, DatabaseUserActivity } from './supabase.types.js';
 import { initializeSupabaseClient, SupabaseConfig } from './supabase.client.js';
