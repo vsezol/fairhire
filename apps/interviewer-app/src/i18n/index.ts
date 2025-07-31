@@ -1,0 +1,94 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+const resources = {
+  en: {
+    translation: {
+      urlInput: {
+        placeholder: 'Enter call URL',
+        button: 'Check Sessions',
+        loading: 'Loading...',
+      },
+      sessions: {
+        title: 'Sessions',
+        active: 'Active',
+        lastActive: 'Last active',
+        noSessions: 'No sessions found for this URL',
+        error: 'Error loading sessions',
+        platform: 'Platform',
+        version: 'Version',
+      },
+      activities: {
+        title: 'Session Activities',
+        noActivities: 'No activities found',
+        suspicious: 'Suspicious Event',
+        events: {
+          app_focus: 'App gained focus',
+          app_blur: 'App lost focus',
+          app_show: 'App shown',
+          app_hide: 'App hidden',
+          key_press: 'Key pressed',
+          mouse_click: 'Mouse clicked',
+          window_resize: 'Window resized',
+        },
+      },
+      mouseTracking: {
+        title: 'Mouse Movement & Clicks',
+        leftClick: 'Left Click',
+        rightClick: 'Right Click',
+        movement: 'Movement Path',
+        noData: 'No mouse tracking data available',
+      },
+    },
+  },
+  ru: {
+    translation: {
+      urlInput: {
+        placeholder: 'Введите ссылку на звонок',
+        button: 'Проверить сессии',
+        loading: 'Загрузка...',
+      },
+      sessions: {
+        title: 'Сессии',
+        active: 'Онлайн',
+        lastActive: 'Оффлайн',
+        noSessions: 'Сессии для данной ссылки не найдены',
+        error: 'Ошибка при загрузке сессий',
+        platform: 'Платформа',
+        version: 'Версия',
+        lastActiveDate: 'Последняя активность',
+      },
+      activities: {
+        title: 'Активность сессии',
+        noActivities: 'Активность не найдена',
+        events: {
+          app_focus: 'Приложение получило фокус',
+          app_blur: 'Приложение потеряло фокус',
+          app_show: 'Приложение показано',
+          app_hide: 'Приложение скрыто',
+          key_press: 'Нажата клавиша',
+          mouse_click: 'Клик мыши',
+          window_resize: 'Изменен размер окна',
+        },
+      },
+      mouseTracking: {
+        title: 'Движение мыши и клики',
+        leftClick: 'Левый клик',
+        rightClick: 'Правый клик',
+        movement: 'Путь движения',
+        noData: 'Нет данных о движении мыши',
+      },
+    },
+  },
+};
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'ru', // default language
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false,
+  },
+});
+
+export default i18n;
