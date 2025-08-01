@@ -19,14 +19,12 @@ export function App() {
     sessions,
     loading: sessionsLoading,
     error: sessionsError,
-    isUpdating: sessionsUpdating,
   } = useSessions(callUrl);
 
   const {
     activities,
     loading: activitiesLoading,
     error: activitiesError,
-    isUpdating: activitiesUpdating,
   } = useActivities(selectedSessionId);
 
   // Находим выбранную сессию
@@ -77,7 +75,6 @@ export function App() {
               sessions={sessions}
               loading={sessionsLoading}
               error={sessionsError}
-              isUpdating={sessionsUpdating}
               selectedSessionId={selectedSessionId}
               onSessionSelect={handleSessionSelect}
             />
@@ -92,7 +89,6 @@ export function App() {
                 activities={activities}
                 loading={activitiesLoading}
                 error={activitiesError}
-                isUpdating={activitiesUpdating}
               />
             </div>
             <div className="lg:w-100">

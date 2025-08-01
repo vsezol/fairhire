@@ -215,8 +215,6 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         this.batchBuffer.unshift(...eventsToInsert);
         throw new Error(error.message);
       }
-
-      console.log(`✅ Supabase: Inserted ${eventsToInsert.length} events`);
     } catch (error) {
       console.error('❌ Supabase: Unexpected error during batch flush:', error);
 

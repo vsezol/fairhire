@@ -127,7 +127,6 @@ export class UnifiedActivityTracker {
     // Сохраняем изменения в хранилище
     try {
       await this.storageAdapter.updateSession(this.session);
-      console.log('✅ Session geometry updated in storage');
     } catch (error) {
       console.error('❌ Failed to update session geometry:', error);
     }
@@ -216,6 +215,11 @@ export class UnifiedActivityTracker {
 
     this.addAppBlurEvent();
     this.session.endTime = Date.now();
+
+    if (this.session.geometry) {
+      this.session.geometry.window.isVisible = false;
+      this.session.geometry.window.isFocused = false;
+    }
 
     // Обновляем сессию в хранилище
     await this.storageAdapter.updateSession(this.session);

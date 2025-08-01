@@ -115,7 +115,24 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
       const windowHeight = sessionGeometry.window.height * scaleY;
 
       // Разные цвета в зависимости от статуса окна
-      if (!sessionGeometry.window.isVisible) {
+      if (windowStatus.isClosed) {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          'Window Closed',
+          windowX + windowWidth / 2,
+          windowY + windowHeight / 2
+        );
+      } else if (!windowStatus.isVisible) {
         // Скрытое окно - серый пунктир
         ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
         ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
@@ -129,11 +146,11 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(
-          'Hidden Window',
+          'Window Hidden',
           windowX + windowWidth / 2,
           windowY + windowHeight / 2
         );
-      } else if (!sessionGeometry.window.isFocused) {
+      } else if (!windowStatus.isFocused) {
         // Видимое, но не в фокусе окно - серый с блюром
         ctx.fillStyle = 'rgba(107, 114, 128, 0.15)';
         ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
@@ -162,7 +179,7 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(
-          'Out of Focus',
+          'Window Blurred',
           windowX + windowWidth / 2,
           windowY + windowHeight / 2
         );
@@ -180,7 +197,7 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(
-          'App Window',
+          'Window Active',
           windowX + windowWidth / 2,
           windowY + windowHeight / 2
         );
@@ -320,8 +337,9 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
     ? {
         isVisible: session.window_is_visible ?? true,
         isFocused: session.window_is_focused ?? true,
+        isClosed: session.end_time ? true : false,
       }
-    : { isVisible: true, isFocused: false };
+    : { isVisible: true, isFocused: false, isClosed: false };
 
   return (
     <div className="space-y-4">
@@ -342,21 +360,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
             <div className="w-8 h-0.5 bg-blue-500 opacity-60"></div>
             <span>{t('mouseTracking.movement')}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-green-500 bg-green-100 opacity-70"></div>
-            <span>Focused Window</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-gray-500 bg-gray-100 opacity-70"></div>
-            <span>Out of Focus</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 border-2 border-gray-500 bg-gray-100 opacity-70"
-              style={{ borderStyle: 'dashed' }}
-            ></div>
-            <span>Hidden</span>
-          </div>
         </div>
       </div>
       <div className="text-sm text-base-content/60 mb-2">
@@ -373,27 +376,11 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           ref={canvasRef}
           width={canvasWidth}
           height={canvasHeight}
-          className={`w-full h-auto max-w-full rounded ${
-            !windowStatus.isVisible
-              ? 'bg-gray-700'
-              : !windowStatus.isFocused
-              ? 'bg-gray-800'
-              : 'bg-gray-900'
-          }`}
+          className={`w-full h-auto max-w-full rounded`}
           style={{
             aspectRatio: `${sessionGeometry.width}/${sessionGeometry.height}`,
           }}
         />
-        {!windowStatus.isVisible && (
-          <div className="text-center mt-2 text-sm text-orange-400">
-            ⚠️ Application window was hidden during this session
-          </div>
-        )}
-        {windowStatus.isVisible && !windowStatus.isFocused && (
-          <div className="text-center mt-2 text-sm text-yellow-400">
-            ⚠️ Application window was out of focus during this session
-          </div>
-        )}
       </div>
     </div>
   );

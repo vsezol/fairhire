@@ -17,7 +17,6 @@ export const SessionsList: React.FC<SessionsListProps> = ({
   sessions,
   loading,
   error,
-  isUpdating = false,
   selectedSessionId,
   onSessionSelect,
 }) => {

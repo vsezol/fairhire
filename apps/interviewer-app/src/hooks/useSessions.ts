@@ -5,20 +5,18 @@ export const useSessions = (callUrl: string | null) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchSessions = useCallback(
-    async (showLoader = true) => {
+    async (background = false) => {
       if (!callUrl) {
         setSessions([]);
         return;
       }
 
-      if (showLoader) {
+      if (!background) {
         setLoading(true);
-      } else {
-        setIsUpdating(true);
       }
+
       setError(null);
 
       try {
@@ -33,24 +31,19 @@ export const useSessions = (callUrl: string | null) => {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
-        setLoading(false);
-        setIsUpdating(false);
+        if (!background) {
+          setLoading(false);
+        }
       }
     },
     [callUrl]
   );
 
   useEffect(() => {
-    fetchSessions(true);
+    fetchSessions();
 
     if (!callUrl) return;
 
-    // Set up interval for periodic updates every 5 seconds
-    const intervalId = setInterval(() => {
-      fetchSessions(false);
-    }, 5000);
-
-    // Set up real-time updates via Supabase
     const channel = supabase
       .channel(`sessions_changes_${callUrl}`)
       .on(
@@ -62,16 +55,15 @@ export const useSessions = (callUrl: string | null) => {
           filter: `call_url=eq.${callUrl}`,
         },
         () => {
-          fetchSessions(false);
+          fetchSessions(true);
         }
       )
       .subscribe();
 
     return () => {
-      clearInterval(intervalId);
       supabase.removeChannel(channel);
     };
   }, [callUrl, fetchSessions]);
 
-  return { sessions, loading, error, isUpdating, refetch: fetchSessions };
+  return { sessions, loading, error, refetch: fetchSessions };
 };

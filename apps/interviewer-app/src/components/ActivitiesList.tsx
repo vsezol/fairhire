@@ -1,20 +1,18 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserActivity } from '../services/supabase';
-import { AlertTriangleIcon, EyeIcon, EyeOffIcon, FocusIcon } from './icons';
+import { AlertTriangleIcon, EyeIcon, EyeOffIcon } from './icons';
 
 interface ActivitiesListProps {
   activities: UserActivity[];
   loading: boolean;
   error: string | null;
-  isUpdating?: boolean;
 }
 
 export const ActivitiesList: React.FC<ActivitiesListProps> = ({
   activities,
   loading,
   error,
-  isUpdating = false,
 }) => {
   const { t } = useTranslation();
 
