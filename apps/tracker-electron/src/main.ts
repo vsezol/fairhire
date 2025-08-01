@@ -342,10 +342,8 @@ async function createWindow(
       );
 
       browserWindow.on('closed', async () => {
-        if (activityTracker && activityTracker.isCurrentlyTracking()) {
-          await activityTracker.stopTracking().catch(console.error);
-          console.log('Activity tracking stopped due to window close');
-        }
+        await activityTracker.stopTracking().catch(console.error);
+        console.log('Activity tracking stopped due to window close');
 
         browserWindow = null;
         clearTimeout(timeout);

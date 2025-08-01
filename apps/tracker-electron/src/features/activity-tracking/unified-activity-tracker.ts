@@ -6,8 +6,6 @@ import {
   MouseMoveData,
   ActivityEvent,
   MouseClickData,
-  IdleStartData,
-  IdleEndData,
   PageNavigateData,
   SessionGeometry,
   WindowGeometry,
@@ -20,11 +18,9 @@ export class UnifiedActivityTracker {
   private lastState = {
     appFocused: false,
     appVisible: true,
-    isIdle: false,
     lastActivity: Date.now(),
   };
   private mouseInterval: NodeJS.Timeout | null = null;
-  private idleCheckInterval: NodeJS.Timeout | null = null;
   private geometryUpdateInterval: NodeJS.Timeout | null = null;
   private targetWindow: BrowserWindow | null = null;
 
@@ -186,7 +182,6 @@ export class UnifiedActivityTracker {
     this.addAppOpenEvent();
 
     this.startMouseTracking();
-    this.startIdleDetection();
     this.startGeometryMonitoring();
 
     console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
@@ -206,11 +201,6 @@ export class UnifiedActivityTracker {
     if (this.mouseInterval) {
       clearInterval(this.mouseInterval);
       this.mouseInterval = null;
-    }
-
-    if (this.idleCheckInterval) {
-      clearInterval(this.idleCheckInterval);
-      this.idleCheckInterval = null;
     }
 
     if (this.geometryUpdateInterval) {
@@ -251,25 +241,6 @@ export class UnifiedActivityTracker {
     }, 500);
   }
 
-  private startIdleDetection(): void {
-    const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 минут
-
-    this.idleCheckInterval = setInterval(() => {
-      if (!this.isTracking) return;
-
-      const now = Date.now();
-      const timeSinceActivity = now - this.lastState.lastActivity;
-
-      if (timeSinceActivity > IDLE_THRESHOLD && !this.lastState.isIdle) {
-        this.lastState.isIdle = true;
-        this.addIdleStartEvent({ idleDuration: timeSinceActivity });
-      } else if (timeSinceActivity <= IDLE_THRESHOLD && this.lastState.isIdle) {
-        this.lastState.isIdle = false;
-        this.addIdleEndEvent({ idleDuration: timeSinceActivity });
-      }
-    }, 30000); // Проверяем каждые 30 секунд
-  }
-
   private updateActivity(): void {
     this.lastState.lastActivity = Date.now();
   }
@@ -277,133 +248,91 @@ export class UnifiedActivityTracker {
   private addMouseMoveEvent(data: MouseMoveData): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'mouse_move',
       timestamp: Date.now(),
       data,
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addMouseClickEventInternal(data: MouseClickData): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'mouse_click',
       timestamp: Date.now(),
       data,
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppFocusEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_focus',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppOpenEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_open',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppCloseEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_close',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppBlurEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_blur',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppShowEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_show',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addAppHideEvent(): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'app_hide',
       timestamp: Date.now(),
       data: {},
-    };
-
-    this.addEventToSession(event);
-  }
-
-  private addIdleStartEvent(data: IdleStartData): void {
-    if (!this.isTracking || !this.session) return;
-
-    const event: ActivityEvent = {
-      type: 'idle_start',
-      timestamp: Date.now(),
-      data,
-    };
-
-    this.addEventToSession(event);
-  }
-
-  private addIdleEndEvent(data: IdleEndData): void {
-    if (!this.isTracking || !this.session) return;
-
-    const event: ActivityEvent = {
-      type: 'idle_end',
-      timestamp: Date.now(),
-      data,
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addPageNavigateEvent(data: PageNavigateData): void {
     if (!this.isTracking || !this.session) return;
 
-    const event: ActivityEvent = {
+    this.addEventToSession({
       type: 'page_navigate',
       timestamp: Date.now(),
       data,
-    };
-
-    this.addEventToSession(event);
+    });
   }
 
   private addEventToSession(event: ActivityEvent): void {
@@ -411,16 +340,11 @@ export class UnifiedActivityTracker {
 
     this.session.totalEvents++;
 
-    // Сохраняем событие через адаптер
     this.storageAdapter
       .saveEvent(this.session.sessionId, event)
       .catch((error) => {
         console.error('❌ Failed to save event through adapter:', error);
       });
-  }
-
-  public isCurrentlyTracking(): boolean {
-    return this.isTracking;
   }
 
   public async destroy(): Promise<void> {
@@ -429,7 +353,6 @@ export class UnifiedActivityTracker {
   }
 
   public setupMouseClickTracking(browserWindow: BrowserWindow): void {
-    // Инжектируем скрипт для отслеживания кликов мыши
     const mouseClickScript = `
       console.log('🖱️ Mouse click tracking injected');
 
@@ -492,20 +415,13 @@ export class UnifiedActivityTracker {
         console.error('Failed to inject mouse click tracking:', error);
       });
 
-    console.log('🌐 Setting up page navigation tracking');
-
-    browserWindow.webContents.on('did-navigate', (event, navigationUrl) => {
-      console.log(`🌐 Page navigated to: ${navigationUrl}`);
+    browserWindow.webContents.on('did-navigate', (_, navigationUrl) => {
       this.addPageNavigateEvent({ url: navigationUrl });
     });
 
-    browserWindow.webContents.on(
-      'did-navigate-in-page',
-      (event, navigationUrl) => {
-        console.log(`🌐 In-page navigation to: ${navigationUrl}`);
-        this.addPageNavigateEvent({ url: navigationUrl });
-      }
-    );
+    browserWindow.webContents.on('did-navigate-in-page', (_, navigationUrl) => {
+      this.addPageNavigateEvent({ url: navigationUrl });
+    });
 
     browserWindow.webContents.on('did-finish-load', () => {
       const currentUrl = browserWindow.webContents.getURL();

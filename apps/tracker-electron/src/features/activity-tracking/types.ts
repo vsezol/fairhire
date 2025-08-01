@@ -22,14 +22,6 @@ export type AppOpenData = Record<string, never>;
 
 export type AppCloseData = Record<string, never>;
 
-export interface IdleStartData {
-  idleDuration: number;
-}
-
-export interface IdleEndData {
-  idleDuration: number;
-}
-
 export interface PageNavigateData {
   url: string;
   title?: string;
@@ -66,8 +58,6 @@ export type ActivityEvent =
   | { type: 'app_hide'; timestamp: number; data: AppHideData }
   | { type: 'app_open'; timestamp: number; data: AppOpenData }
   | { type: 'app_close'; timestamp: number; data: AppCloseData }
-  | { type: 'idle_start'; timestamp: number; data: IdleStartData }
-  | { type: 'idle_end'; timestamp: number; data: IdleEndData }
   | { type: 'page_navigate'; timestamp: number; data: PageNavigateData };
 
 export interface ActivitySession {
