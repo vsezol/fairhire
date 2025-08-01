@@ -22,6 +22,14 @@ export type AppOpenData = Record<string, never>;
 
 export type AppCloseData = Record<string, never>;
 
+export interface KeyDownEventData {
+  code: string;
+  shift: boolean;
+  ctrl: boolean;
+  alt: boolean;
+  meta: boolean;
+}
+
 export interface PageNavigateData {
   url: string;
   title?: string;
@@ -52,6 +60,7 @@ export interface SessionGeometry {
 export type ActivityEvent =
   | { type: 'mouse_move'; timestamp: number; data: MouseMoveData }
   | { type: 'mouse_click'; timestamp: number; data: MouseClickData }
+  | { type: 'key_down'; timestamp: number; data: KeyDownEventData }
   | { type: 'app_focus'; timestamp: number; data: AppFocusData }
   | { type: 'app_blur'; timestamp: number; data: AppBlurData }
   | { type: 'app_show'; timestamp: number; data: AppShowData }

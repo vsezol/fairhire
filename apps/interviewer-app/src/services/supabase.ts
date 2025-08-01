@@ -91,12 +91,21 @@ export interface AppEventData {
   process_id?: number;
 }
 
+export interface KeyDownEventData {
+  code: string;
+  shift: boolean;
+  ctrl: boolean;
+  alt: boolean;
+  meta: boolean;
+}
+
 // Union тип для всех возможных event_data
 export type EventData =
   | MouseEventData
   | KeyEventData
   | WindowEventData
   | AppEventData
+  | KeyDownEventData
   | Record<string, unknown>;
 
 export interface UserActivity {
@@ -107,3 +116,9 @@ export interface UserActivity {
   event_data: EventData;
   created_at: string;
 }
+
+export const isKeyDownActivity = (
+  event: UserActivity
+): event is UserActivity & { event_data: KeyDownEventData } => {
+  return event.event_type === 'key_down';
+};

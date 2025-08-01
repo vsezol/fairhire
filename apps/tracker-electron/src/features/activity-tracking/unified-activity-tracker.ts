@@ -10,6 +10,7 @@ import {
   SessionGeometry,
   WindowGeometry,
   ScreenGeometry,
+  KeyDownEventData,
 } from './types.js';
 
 export class UnifiedActivityTracker {
@@ -23,9 +24,200 @@ export class UnifiedActivityTracker {
   private mouseInterval: NodeJS.Timeout | null = null;
   private geometryUpdateInterval: NodeJS.Timeout | null = null;
   private targetWindow: BrowserWindow | null = null;
+  private lastKeyDownEvent: KeyDownEventData | null = null;
 
   constructor(private storageAdapter: StorageAdapter) {
     this.setupGlobalEventListeners();
+  }
+
+  public async initialize(): Promise<void> {
+    if (!this.storageAdapter.isReady()) {
+      await this.storageAdapter.initialize();
+    }
+    console.log('✅ Unified Activity Tracker initialized');
+  }
+
+  public async startTracking(
+    callUrl: string,
+    targetWindow?: BrowserWindow
+  ): Promise<void> {
+    this.targetWindow = targetWindow || null;
+
+    if (this.isTracking) {
+      console.log('Tracking already active');
+      return;
+    }
+
+    if (!this.storageAdapter.isReady()) {
+      throw new Error('Storage adapter not initialized');
+    }
+
+    // Получаем геометрию сессии
+    const geometry = this.getSessionGeometry();
+
+    this.session = {
+      sessionId: v7(),
+      startTime: Date.now(),
+      callUrl,
+      totalEvents: 0,
+      geometry,
+    };
+
+    // Создаем сессию в хранилище
+    await this.storageAdapter.createSession(this.session);
+
+    this.isTracking = true;
+    this.lastState.lastActivity = Date.now();
+
+    this.addAppOpenEvent();
+
+    this.startMouseTracking();
+    this.startGeometryMonitoring();
+
+    console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
+  }
+
+  public async stopTracking(): Promise<void> {
+    if (!this.isTracking || !this.session) {
+      return;
+    }
+
+    this.addAppBlurEvent();
+    await new Promise((resolve) => setTimeout(resolve, 0)); // for order
+    this.addAppCloseEvent();
+
+    this.isTracking = false;
+
+    if (this.mouseInterval) {
+      clearInterval(this.mouseInterval);
+      this.mouseInterval = null;
+    }
+
+    if (this.geometryUpdateInterval) {
+      clearInterval(this.geometryUpdateInterval);
+      this.geometryUpdateInterval = null;
+    }
+
+    this.session.endTime = Date.now();
+
+    if (this.session.geometry) {
+      this.session.geometry.window.isVisible = false;
+      this.session.geometry.window.isFocused = false;
+    }
+
+    // Обновляем сессию в хранилище
+    await this.storageAdapter.updateSession(this.session);
+
+    console.log(
+      `🛑 Activity tracking stopped: ${this.session.sessionId}, events: ${this.session.totalEvents}`
+    );
+    this.session = null;
+  }
+
+  public async destroy(): Promise<void> {
+    await this.stopTracking();
+    await this.storageAdapter.destroy();
+  }
+
+  public setupMouseClickTracking(browserWindow: BrowserWindow): void {
+    const mouseClickScript = `
+      console.log('🖱️ Mouse click tracking injected');
+
+      // Функция для безопасной отправки клика
+      function sendMouseClick(x, y, button) {
+        if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
+          window.electronAPI.activityTracker.mouseClick(x, y, button)
+            .then(() => console.log('✅ Mouse click sent to main process:', button, 'at', x, y))
+            .catch(err => console.error('❌ Failed to send mouse click:', err));
+        } else {
+          console.warn('⚠️ electronAPI.activityTracker.mouseClick not available yet');
+        }
+      }
+
+      // Ждем несколько секунд для загрузки electronAPI
+      setTimeout(() => {
+        if (window.electronAPI && window.electronAPI.activityTracker) {
+          console.log('✅ electronAPI ready for mouse tracking');
+        } else {
+          console.warn('❌ electronAPI still not available after 3 seconds');
+        }
+      }, 3000);
+
+      document.addEventListener('click', (e) => {
+        console.log('Mouse click detected:', e.clientX, e.clientY);
+
+        const button = e.button === 0 ? 'left' : e.button === 1 ? 'middle' : 'right';
+        const x = e.clientX;
+        const y = e.clientY;
+
+        sendMouseClick(x, y, button);
+      }, true);
+
+      document.addEventListener('contextmenu', (e) => {
+        console.log('Right click detected:', e.clientX, e.clientY);
+
+        // Также отслеживаем правые клики
+        if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
+          window.electronAPI.activityTracker.mouseClick(e.clientX, e.clientY, 'right')
+            .then(() => console.log('✅ Right click sent to main process'))
+            .catch(err => console.error('❌ Failed to send right click:', err));
+        }
+      }, true);
+
+      document.addEventListener('mousedown', (e) => {
+        if (e.button === 1) { // Middle button
+          console.log('Middle click detected:', e.clientX, e.clientY);
+          if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
+            window.electronAPI.activityTracker.mouseClick(e.clientX, e.clientY, 'middle')
+              .then(() => console.log('✅ Middle click sent to main process'))
+              .catch(err => console.error('❌ Failed to send middle click:', err));
+          }
+        }
+      }, true);
+
+      document.addEventListener('keydown', (e) => {
+        console.log('Key down detected:', e.key);
+        window.electronAPI.activityTracker.keyDown({code: e.code, shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey})
+          .then(() => console.log('✅ Key down sent to main process'))
+          .catch(err => console.error('❌ Failed to send key down:', err));
+      });
+    `;
+
+    browserWindow.webContents
+      .executeJavaScript(mouseClickScript)
+      .catch((error) => {
+        console.error('Failed to inject mouse click tracking:', error);
+      });
+
+    browserWindow.webContents.on('did-navigate', (_, navigationUrl) => {
+      this.addPageNavigateEvent({ url: navigationUrl });
+    });
+
+    browserWindow.webContents.on('did-navigate-in-page', (_, navigationUrl) => {
+      this.addPageNavigateEvent({ url: navigationUrl });
+    });
+
+    browserWindow.webContents.on('did-finish-load', () => {
+      const currentUrl = browserWindow.webContents.getURL();
+      const title = browserWindow.webContents.getTitle();
+
+      console.log(`🌐 Initial page loaded: ${currentUrl}`);
+      this.addPageNavigateEvent({ url: currentUrl, title: title });
+    });
+  }
+
+  public addMouseClickEvent(x: number, y: number, button = 'left'): void {
+    if (!this.isTracking) return;
+
+    this.updateActivity();
+    this.addMouseClickEventInternal({ x, y, button });
+  }
+
+  public addKeyDownEvent(event: KeyDownEventData): void {
+    if (!this.isTracking) return;
+
+    this.updateActivity();
+    this.addKeyDownEventInternal(event);
   }
 
   private setupGlobalEventListeners(): void {
@@ -56,13 +248,6 @@ export class UnifiedActivityTracker {
         this.addAppHideEvent();
       }
     });
-  }
-
-  public async initialize(): Promise<void> {
-    if (!this.storageAdapter.isReady()) {
-      await this.storageAdapter.initialize();
-    }
-    console.log('✅ Unified Activity Tracker initialized');
   }
 
   /**
@@ -147,81 +332,30 @@ export class UnifiedActivityTracker {
     console.log('📐 Geometry monitoring started');
   }
 
-  public async startTracking(
-    callUrl: string,
-    targetWindow?: BrowserWindow
-  ): Promise<void> {
-    this.targetWindow = targetWindow || null;
+  private addMouseClickEventInternal(data: MouseClickData): void {
+    if (!this.isTracking || !this.session) return;
 
-    if (this.isTracking) {
-      console.log('Tracking already active');
-      return;
-    }
-
-    if (!this.storageAdapter.isReady()) {
-      throw new Error('Storage adapter not initialized');
-    }
-
-    // Получаем геометрию сессии
-    const geometry = this.getSessionGeometry();
-
-    this.session = {
-      sessionId: v7(),
-      startTime: Date.now(),
-      callUrl,
-      totalEvents: 0,
-      geometry,
-    };
-
-    // Создаем сессию в хранилище
-    await this.storageAdapter.createSession(this.session);
-
-    this.isTracking = true;
-    this.lastState.lastActivity = Date.now();
-
-    this.addAppOpenEvent();
-
-    this.startMouseTracking();
-    this.startGeometryMonitoring();
-
-    console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
+    this.addEventToSession({
+      type: 'mouse_click',
+      timestamp: Date.now(),
+      data,
+    });
   }
 
-  public async stopTracking(): Promise<void> {
-    if (!this.isTracking || !this.session) {
+  private addKeyDownEventInternal(data: KeyDownEventData): void {
+    if (!this.isTracking || !this.session) return;
+
+    if (!this.isKeyCombination(data) || this.isDuplicateKeyDownEvent(data)) {
       return;
     }
 
-    this.addAppBlurEvent();
-    await new Promise((resolve) => setTimeout(resolve, 0)); // for order
-    this.addAppCloseEvent();
+    this.lastKeyDownEvent = data;
 
-    this.isTracking = false;
-
-    if (this.mouseInterval) {
-      clearInterval(this.mouseInterval);
-      this.mouseInterval = null;
-    }
-
-    if (this.geometryUpdateInterval) {
-      clearInterval(this.geometryUpdateInterval);
-      this.geometryUpdateInterval = null;
-    }
-
-    this.session.endTime = Date.now();
-
-    if (this.session.geometry) {
-      this.session.geometry.window.isVisible = false;
-      this.session.geometry.window.isFocused = false;
-    }
-
-    // Обновляем сессию в хранилище
-    await this.storageAdapter.updateSession(this.session);
-
-    console.log(
-      `🛑 Activity tracking stopped: ${this.session.sessionId}, events: ${this.session.totalEvents}`
-    );
-    this.session = null;
+    this.addEventToSession({
+      type: 'key_down',
+      timestamp: Date.now(),
+      data,
+    });
   }
 
   private startMouseTracking(): void {
@@ -250,16 +384,6 @@ export class UnifiedActivityTracker {
 
     this.addEventToSession({
       type: 'mouse_move',
-      timestamp: Date.now(),
-      data,
-    });
-  }
-
-  private addMouseClickEventInternal(data: MouseClickData): void {
-    if (!this.isTracking || !this.session) return;
-
-    this.addEventToSession({
-      type: 'mouse_click',
       timestamp: Date.now(),
       data,
     });
@@ -347,99 +471,35 @@ export class UnifiedActivityTracker {
       });
   }
 
-  public async destroy(): Promise<void> {
-    await this.stopTracking();
-    await this.storageAdapter.destroy();
+  private isKeyCombination(event: KeyDownEventData): boolean {
+    return (
+      (event.alt ||
+        event.ctrl ||
+        event.meta ||
+        event.shift ||
+        (event.code.includes('F') && event.code.length > 1)) &&
+      ![
+        'ShiftLeft',
+        'ShiftRight',
+        'ControlLeft',
+        'ControlRight',
+        'AltLeft',
+        'AltRight',
+        'MetaLeft',
+        'MetaRight',
+      ].includes(event.code)
+    );
   }
 
-  public setupMouseClickTracking(browserWindow: BrowserWindow): void {
-    const mouseClickScript = `
-      console.log('🖱️ Mouse click tracking injected');
+  private isDuplicateKeyDownEvent(event: KeyDownEventData): boolean {
+    if (!this.lastKeyDownEvent) return false;
 
-      // Функция для безопасной отправки клика
-      function sendMouseClick(x, y, button) {
-        if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
-          window.electronAPI.activityTracker.mouseClick(x, y, button)
-            .then(() => console.log('✅ Mouse click sent to main process:', button, 'at', x, y))
-            .catch(err => console.error('❌ Failed to send mouse click:', err));
-        } else {
-          console.warn('⚠️ electronAPI.activityTracker.mouseClick not available yet');
-        }
-      }
-
-      // Ждем несколько секунд для загрузки electronAPI
-      setTimeout(() => {
-        if (window.electronAPI && window.electronAPI.activityTracker) {
-          console.log('✅ electronAPI ready for mouse tracking');
-        } else {
-          console.warn('❌ electronAPI still not available after 3 seconds');
-        }
-      }, 3000);
-
-      document.addEventListener('click', (e) => {
-        console.log('Mouse click detected:', e.clientX, e.clientY);
-
-        const button = e.button === 0 ? 'left' : e.button === 1 ? 'middle' : 'right';
-        const x = e.clientX;
-        const y = e.clientY;
-
-        sendMouseClick(x, y, button);
-      }, true);
-
-      document.addEventListener('contextmenu', (e) => {
-        console.log('Right click detected:', e.clientX, e.clientY);
-
-        // Также отслеживаем правые клики
-        if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
-          window.electronAPI.activityTracker.mouseClick(e.clientX, e.clientY, 'right')
-            .then(() => console.log('✅ Right click sent to main process'))
-            .catch(err => console.error('❌ Failed to send right click:', err));
-        }
-      }, true);
-
-      document.addEventListener('mousedown', (e) => {
-        if (e.button === 1) { // Middle button
-          console.log('Middle click detected:', e.clientX, e.clientY);
-          if (window.electronAPI && window.electronAPI.activityTracker && window.electronAPI.activityTracker.mouseClick) {
-            window.electronAPI.activityTracker.mouseClick(e.clientX, e.clientY, 'middle')
-              .then(() => console.log('✅ Middle click sent to main process'))
-              .catch(err => console.error('❌ Failed to send middle click:', err));
-          }
-        }
-      }, true);
-    `;
-
-    browserWindow.webContents
-      .executeJavaScript(mouseClickScript)
-      .catch((error) => {
-        console.error('Failed to inject mouse click tracking:', error);
-      });
-
-    browserWindow.webContents.on('did-navigate', (_, navigationUrl) => {
-      this.addPageNavigateEvent({ url: navigationUrl });
-    });
-
-    browserWindow.webContents.on('did-navigate-in-page', (_, navigationUrl) => {
-      this.addPageNavigateEvent({ url: navigationUrl });
-    });
-
-    browserWindow.webContents.on('did-finish-load', () => {
-      const currentUrl = browserWindow.webContents.getURL();
-      const title = browserWindow.webContents.getTitle();
-
-      console.log(`🌐 Initial page loaded: ${currentUrl}`);
-      this.addPageNavigateEvent({ url: currentUrl, title: title });
-    });
-  }
-
-  public addMouseClickEvent(x: number, y: number, button = 'left'): void {
-    if (!this.isTracking) return;
-
-    this.updateActivity();
-    this.addMouseClickEventInternal({ x, y, button });
-  }
-
-  public getCurrentSession(): ActivitySession | null {
-    return this.session;
+    return (
+      this.lastKeyDownEvent.code === event.code &&
+      this.lastKeyDownEvent.shift === event.shift &&
+      this.lastKeyDownEvent.ctrl === event.ctrl &&
+      this.lastKeyDownEvent.alt === event.alt &&
+      this.lastKeyDownEvent.meta === event.meta
+    );
   }
 }

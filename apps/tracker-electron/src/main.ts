@@ -11,6 +11,7 @@ import {
   createSmartAutoAdapter,
 } from './features/activity-tracking/index.js';
 import { screenshotProtectionService } from './features/screenshot-protection/index.js';
+import { KeyDownEvent } from './preload.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
@@ -395,7 +396,7 @@ ipcMain.handle('open-url', async (event, url: string) => {
 
 ipcMain.handle(
   'activity-tracker:mouse-click',
-  (event, x: number, y: number, button?: string) => {
+  (_, x: number, y: number, button?: string) => {
     if (!activityTracker) {
       return { success: false, error: 'Activity tracker not initialized' };
     }
@@ -403,6 +404,13 @@ ipcMain.handle(
     return { success: true };
   }
 );
+ipcMain.handle('activity-tracker:key-down', (_, event: KeyDownEvent) => {
+  if (!activityTracker) {
+    return { success: false, error: 'Activity tracker not initialized' };
+  }
+  activityTracker.addKeyDownEvent(event);
+  return { success: true };
+});
 
 // Add Chrome command line switches for better video call compatibility
 app.commandLine.appendSwitch('--enable-media-stream');

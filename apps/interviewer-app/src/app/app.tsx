@@ -89,6 +89,7 @@ export function App() {
                 activities={activities}
                 loading={activitiesLoading}
                 error={activitiesError}
+                platform={selectedSession?.platform || ''}
               />
             </div>
             <div className="lg:w-100">
