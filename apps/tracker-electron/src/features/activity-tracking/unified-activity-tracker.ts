@@ -1,5 +1,5 @@
 import { v7 } from 'uuid';
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, globalShortcut, screen } from 'electron';
 import { StorageAdapter } from './storage-adapter.interface.js';
 import {
   ActivitySession,
@@ -19,7 +19,6 @@ export class UnifiedActivityTracker {
   private lastState = {
     appFocused: false,
     appVisible: true,
-    lastActivity: Date.now(),
   };
   private mouseInterval: NodeJS.Timeout | null = null;
   private geometryUpdateInterval: NodeJS.Timeout | null = null;
@@ -67,12 +66,12 @@ export class UnifiedActivityTracker {
     await this.storageAdapter.createSession(this.session);
 
     this.isTracking = true;
-    this.lastState.lastActivity = Date.now();
 
     this.addAppOpenEvent();
 
     this.startMouseTracking();
     this.startGeometryMonitoring();
+    this.registerScreenshotShortcuts();
 
     console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
   }
@@ -116,6 +115,7 @@ export class UnifiedActivityTracker {
 
   public async destroy(): Promise<void> {
     await this.stopTracking();
+    this.unregisterScreenshotShortcuts();
     await this.storageAdapter.destroy();
   }
 
@@ -209,14 +209,12 @@ export class UnifiedActivityTracker {
   public addMouseClickEvent(x: number, y: number, button = 'left'): void {
     if (!this.isTracking) return;
 
-    this.updateActivity();
     this.addMouseClickEventInternal({ x, y, button });
   }
 
   public addKeyDownEvent(event: KeyDownEventData): void {
     if (!this.isTracking) return;
 
-    this.updateActivity();
     this.addKeyDownEventInternal(event);
   }
 
@@ -366,17 +364,12 @@ export class UnifiedActivityTracker {
 
       try {
         const mousePos = screen.getCursorScreenPoint();
-        this.updateActivity();
         this.addMouseMoveEvent({ x: mousePos.x, y: mousePos.y });
       } catch (error) {
         console.error('❌ Error getting mouse position:', error);
         console.error('This might be due to macOS accessibility permissions');
       }
     }, 500);
-  }
-
-  private updateActivity(): void {
-    this.lastState.lastActivity = Date.now();
   }
 
   private addMouseMoveEvent(data: MouseMoveData): void {
@@ -501,5 +494,71 @@ export class UnifiedActivityTracker {
       this.lastKeyDownEvent.alt === event.alt &&
       this.lastKeyDownEvent.meta === event.meta
     );
+  }
+
+  /**
+   * Регистрирует глобальные горячие клавиши для отслеживания попыток скриншота
+   */
+  private registerScreenshotShortcuts(): void {
+    try {
+      if (process.platform === 'darwin') {
+        // macOS shortcuts
+        globalShortcut.register('CommandOrControl+Shift+3', () => {
+          this.addScreenshotAttempt();
+        });
+
+        globalShortcut.register('CommandOrControl+Shift+4', () => {
+          this.addScreenshotAttempt();
+        });
+
+        globalShortcut.register('CommandOrControl+Shift+5', () => {
+          this.addScreenshotAttempt();
+        });
+      } else {
+        // Windows shortcuts
+        globalShortcut.register('PrintScreen', () => {
+          this.addScreenshotAttempt();
+        });
+
+        globalShortcut.register('Alt+PrintScreen', () => {
+          this.addScreenshotAttempt();
+        });
+
+        globalShortcut.register('CommandOrControl+PrintScreen', () => {
+          this.addScreenshotAttempt();
+        });
+
+        globalShortcut.register('CommandOrControl+Shift+S', () => {
+          this.addScreenshotAttempt();
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to register screenshot shortcuts:', error);
+    }
+  }
+
+  private addScreenshotAttempt(): void {
+    if (!this.isTracking || !this.session) {
+      console.log('⚠️ Screenshot attempt detected but tracking not active');
+      return;
+    }
+
+    this.addEventToSession({
+      type: 'screenshot_attempt',
+      timestamp: Date.now(),
+      data: {},
+    });
+  }
+
+  /**
+   * Отменяет регистрацию глобальных горячих клавиш
+   */
+  private unregisterScreenshotShortcuts(): void {
+    try {
+      globalShortcut.unregisterAll();
+      console.log('🔧 Screenshot detection shortcuts unregistered');
+    } catch (error) {
+      console.error('❌ Failed to unregister screenshot shortcuts:', error);
+    }
   }
 }

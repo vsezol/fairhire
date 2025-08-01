@@ -44,6 +44,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
       'app_open',
       'app_close',
       'key_down',
+      'screenshot_attempt',
     ].includes(activity.event_type)
   );
 
@@ -169,7 +170,12 @@ function formatKeyboardShortcut(eventData: KeyDownEventData, platform: string) {
   return parts;
 }
 
-const suspiciousEvents = ['app_blur', 'app_hide', 'app_close'];
+const suspiciousEvents = [
+  'app_blur',
+  'app_hide',
+  'app_close',
+  'screenshot_attempt',
+];
 
 function isSuspiciousEvent(event: UserActivity, platform: string) {
   if (suspiciousEvents.includes(event.event_type)) {

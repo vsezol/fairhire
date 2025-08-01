@@ -22,6 +22,8 @@ export type AppOpenData = Record<string, never>;
 
 export type AppCloseData = Record<string, never>;
 
+export type ScreenshotAttemptData = Record<string, never>;
+
 export interface KeyDownEventData {
   code: string;
   shift: boolean;
@@ -67,7 +69,12 @@ export type ActivityEvent =
   | { type: 'app_hide'; timestamp: number; data: AppHideData }
   | { type: 'app_open'; timestamp: number; data: AppOpenData }
   | { type: 'app_close'; timestamp: number; data: AppCloseData }
-  | { type: 'page_navigate'; timestamp: number; data: PageNavigateData };
+  | { type: 'page_navigate'; timestamp: number; data: PageNavigateData }
+  | {
+      type: 'screenshot_attempt';
+      timestamp: number;
+      data: ScreenshotAttemptData;
+    };
 
 export interface ActivitySession {
   sessionId: string;

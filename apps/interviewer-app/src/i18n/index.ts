@@ -32,6 +32,7 @@ const resources = {
           key_down: 'Keyboard',
           mouse_click: 'Mouse clicked',
           window_resize: 'Window resized',
+          screenshot_attempt: 'Screenshot attempt',
         },
       },
       mouseTracking: {
@@ -73,6 +74,7 @@ const resources = {
           key_down: 'Клавиатура',
           mouse_click: 'Клик мыши',
           window_resize: 'Изменен размер окна',
+          screenshot_attempt: 'Попытка скриншота',
         },
       },
       mouseTracking: {
