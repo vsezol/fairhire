@@ -362,15 +362,6 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
           </div>
         </div>
       </div>
-      <div className="text-sm text-base-content/60 mb-2">
-        Screen: {sessionGeometry.width} × {sessionGeometry.height}px
-        {session?.window_width && session?.window_height && (
-          <span className="ml-4">
-            Window: {session.window_width} × {session.window_height}px at (
-            {session.window_x || 0}, {session.window_y || 0})
-          </span>
-        )}
-      </div>
       <div className={`bg-base-200 rounded-lg p-4 transition-opacity`}>
         <canvas
           ref={canvasRef}

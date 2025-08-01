@@ -188,7 +188,6 @@ export class UnifiedActivityTracker {
     this.startMouseTracking();
     this.startIdleDetection();
     this.startGeometryMonitoring();
-    this.addAppFocusEvent();
 
     console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
   }
