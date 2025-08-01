@@ -18,6 +18,10 @@ export type AppShowData = Record<string, never>;
 
 export type AppHideData = Record<string, never>;
 
+export type AppOpenData = Record<string, never>;
+
+export type AppCloseData = Record<string, never>;
+
 export interface IdleStartData {
   idleDuration: number;
 }
@@ -60,6 +64,8 @@ export type ActivityEvent =
   | { type: 'app_blur'; timestamp: number; data: AppBlurData }
   | { type: 'app_show'; timestamp: number; data: AppShowData }
   | { type: 'app_hide'; timestamp: number; data: AppHideData }
+  | { type: 'app_open'; timestamp: number; data: AppOpenData }
+  | { type: 'app_close'; timestamp: number; data: AppCloseData }
   | { type: 'idle_start'; timestamp: number; data: IdleStartData }
   | { type: 'idle_end'; timestamp: number; data: IdleEndData }
   | { type: 'page_navigate'; timestamp: number; data: PageNavigateData };

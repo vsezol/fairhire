@@ -183,6 +183,8 @@ export class UnifiedActivityTracker {
     this.isTracking = true;
     this.lastState.lastActivity = Date.now();
 
+    this.addAppOpenEvent();
+
     this.startMouseTracking();
     this.startIdleDetection();
     this.startGeometryMonitoring();
@@ -195,6 +197,10 @@ export class UnifiedActivityTracker {
     if (!this.isTracking || !this.session) {
       return;
     }
+
+    this.addAppBlurEvent();
+    await new Promise((resolve) => setTimeout(resolve, 0)); // for order
+    this.addAppCloseEvent();
 
     this.isTracking = false;
 
@@ -213,7 +219,6 @@ export class UnifiedActivityTracker {
       this.geometryUpdateInterval = null;
     }
 
-    this.addAppBlurEvent();
     this.session.endTime = Date.now();
 
     if (this.session.geometry) {
@@ -299,6 +304,30 @@ export class UnifiedActivityTracker {
 
     const event: ActivityEvent = {
       type: 'app_focus',
+      timestamp: Date.now(),
+      data: {},
+    };
+
+    this.addEventToSession(event);
+  }
+
+  private addAppOpenEvent(): void {
+    if (!this.isTracking || !this.session) return;
+
+    const event: ActivityEvent = {
+      type: 'app_open',
+      timestamp: Date.now(),
+      data: {},
+    };
+
+    this.addEventToSession(event);
+  }
+
+  private addAppCloseEvent(): void {
+    if (!this.isTracking || !this.session) return;
+
+    const event: ActivityEvent = {
+      type: 'app_close',
       timestamp: Date.now(),
       data: {},
     };

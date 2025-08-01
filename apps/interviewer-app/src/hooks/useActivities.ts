@@ -49,7 +49,7 @@ export const useActivities = (sessionId: string | null) => {
             const exists = prev.some((a) => a.id === newActivity.id);
 
             if (!exists) {
-              return [...prev, newActivity];
+              return [newActivity, ...prev];
             }
 
             return prev;
@@ -77,7 +77,7 @@ async function getSessionActivities(
     .from('user_activities')
     .select('*')
     .eq('session_id', sessionId)
-    .order('timestamp', { ascending: true });
+    .order('timestamp', { ascending: false });
 
   if (error) throw error;
 

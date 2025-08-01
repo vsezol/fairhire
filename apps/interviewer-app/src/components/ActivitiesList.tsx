@@ -16,32 +16,30 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const suspiciousEvents = ['app_blur', 'app_hide'];
+  const suspiciousEvents = ['app_blur', 'app_hide', 'app_close'];
 
   const getEventIcon = (eventType: string) => {
-    switch (eventType) {
-      case 'app_focus':
-        return <EyeIcon className="w-4 h-4" />;
-      case 'app_blur':
-        return <EyeOffIcon className="w-4 h-4" />;
-      case 'app_show':
-        return <EyeIcon className="w-4 h-4" />;
-      case 'app_hide':
-        return <EyeOffIcon className="w-4 h-4" />;
-      default:
-        return null;
-    }
+    return null;
   };
 
   const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp / 1000).toLocaleTimeString();
+    return new Date(timestamp).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   };
 
   // Filter out mouse movement events
-  const filteredActivities = activities.filter(
-    (activity) =>
-      activity.event_type !== 'mouse_move' &&
-      activity.event_type !== 'page_navigate'
+  const filteredActivities = activities.filter((activity) =>
+    [
+      'app_focus',
+      'app_blur',
+      'app_hide',
+      'app_show',
+      'app_open',
+      'app_close',
+    ].includes(activity.event_type)
   );
 
   if (loading) {
