@@ -1,4 +1,4 @@
-# FairHire Interview
+# FairHire
 
 # Full Support
 

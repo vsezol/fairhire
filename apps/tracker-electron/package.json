@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/main.js",
   "homepage": "https://github.com/anticheat-interview/anticheat-interview",
-  "description": "FairHire Interview Application",
+  "description": "FairHire Application",
   "author": {
     "name": "FairHire Team",
     "email": "vsezold@gmail.com"
@@ -15,8 +15,8 @@
     "@supabase/supabase-js": "^2.45.4"
   },
   "build": {
-    "appId": "com.fairhire.interview",
-    "productName": "FairHire Interview",
+    "appId": "com.fairhire",
+    "productName": "FairHire",
     "executableName": "FairHire",
     "directories": {
       "buildResources": "assets",

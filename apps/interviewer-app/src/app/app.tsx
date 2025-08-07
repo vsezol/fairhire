@@ -51,7 +51,7 @@ export function App() {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">FairHire Interview</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">FairHire</h1>
           <div className="flex items-center gap-4">
             <button
               onClick={toggleLanguage}

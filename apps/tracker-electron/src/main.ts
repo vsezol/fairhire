@@ -39,7 +39,7 @@ function createMainWindow(): void {
     },
     resizable: false,
     maximizable: false,
-    title: titleWithVersion('FairHire Interview'),
+    title: titleWithVersion('FairHire'),
   });
 
   screenshotProtectionService.protectWindow(mainWindow);
