@@ -41,13 +41,17 @@ export class GoogleMeetStrategy extends VideoCallStrategy {
       show: false,
       width: 800,
       height: 600,
+      autoHideMenuBar: true,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
         webSecurity: true,
         partition: GoogleMeetStrategy.CONFIG.SESSION_PARTITION,
+        devTools: false,
       },
     });
+
+    warmupWindow.setMenu(null);
 
     try {
       this.log('Loading meet.google.com for session initialization...');

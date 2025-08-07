@@ -31,16 +31,20 @@ function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 450,
     height: 300,
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false, // Необходимо для ES modules в preload
       preload: join(__dirname, 'preload.js'),
+      devTools: false,
     },
     resizable: false,
     maximizable: false,
     title: titleWithVersion('FairHire'),
   });
+
+  mainWindow.setMenu(null);
 
   screenshotProtectionService.protectWindow(mainWindow);
 
@@ -156,13 +160,17 @@ async function createWindow(
 
   browserWindow = new BrowserWindow({
     ...config.windowConfig,
+    autoHideMenuBar: true,
     webPreferences: {
       ...config.windowConfig.webPreferences,
       partition: config.sessionPartition,
       sandbox: false,
       preload: join(__dirname, 'preload.js'),
+      devTools: false,
     },
   });
+
+  browserWindow.setMenu(null);
 
   // Устанавливаем User Agent
   browserWindow.webContents.setUserAgent(config.userAgent);
