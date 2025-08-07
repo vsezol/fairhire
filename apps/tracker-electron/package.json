@@ -1,6 +1,6 @@
 {
   "name": "@anticheat-interview/tracker-electron",
-  "version": "0.0.20",
+  "version": "0.0.22",
   "private": true,
   "type": "module",
   "main": "dist/main.js",

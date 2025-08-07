@@ -71,16 +71,6 @@ function createMainWindow(): void {
         errorDescription,
         validatedURL
       );
-
-      // In development, if Vite server is not running, show error
-      if (
-        process.env.NODE_ENV === 'development' &&
-        validatedURL.includes('localhost:4200')
-      ) {
-        console.log(
-          'Make sure the tracker-app dev server is running on port 4200'
-        );
-      }
     }
   );
 }
@@ -314,6 +304,12 @@ async function createWindow(
             validatedURL
           );
 
+          // Специальная обработка CSP ошибок
+          if (errorCode === -30 && validatedURL.includes('metrika')) {
+            console.log('Ignoring CSP error from analytics/tracking service');
+            return; // Игнорируем CSP ошибки от аналитики
+          }
+
           // Проверяем через стратегию, нужно ли повторить попытку
           if (strategy.shouldRetryOnError(errorCode, validatedURL)) {
             console.log('Strategy suggests retry, trying alternative URL...');
@@ -328,7 +324,8 @@ async function createWindow(
             errorCode === -101 ||
             errorCode === -105 ||
             errorCode === -106 ||
-            errorCode === -2;
+            errorCode === -2 ||
+            errorCode === -30; // CSP errors are often non-critical (ads, analytics)
 
           if (isRetryableError) {
             rejectOnce(

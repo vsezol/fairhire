@@ -40,6 +40,8 @@ export class UnifiedActivityTracker {
     callUrl: string,
     targetWindow?: BrowserWindow
   ): Promise<void> {
+    console.log('🎯 Starting activity tracking for call:', callUrl);
+
     this.targetWindow = targetWindow || null;
 
     if (this.isTracking) {

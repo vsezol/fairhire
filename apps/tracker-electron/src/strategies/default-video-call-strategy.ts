@@ -132,4 +132,25 @@ export class DefaultVideoCallStrategy extends VideoCallStrategy {
       loadDelay: 0,
     };
   }
+
+  /**
+   * Проверяет, нужно ли повторить загрузку при ошибке did-fail-load
+   */
+  override shouldRetryOnError(errorCode: number, validatedURL: string): boolean {
+    // CSP ошибки часто от сторонних ресурсов - не критичны
+    if (errorCode === -30) {
+      this.log('CSP error detected, likely from third-party resource, retrying...');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Проверяет, нужно ли использовать альтернативные URL при ошибке loadURL
+   */
+  override shouldUseAlternativeOnLoadError(): boolean {
+    // Можем попробовать альтернативы для Default стратегии
+    return true;
+  }
 }
