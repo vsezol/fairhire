@@ -20,9 +20,8 @@ describe('App', () => {
       </BrowserRouter>
     );
     expect(
-      getAllByText(
-        new RegExp('Welcome @anticheat-interview/interviewer-app', 'gi')
-      ).length > 0
+      getAllByText(new RegExp('Welcome @fairhire/interviewer-app', 'gi'))
+        .length > 0
     ).toBeTruthy();
   });
 });

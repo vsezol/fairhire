@@ -10,7 +10,7 @@ const swcJestConfig = JSON.parse(
 swcJestConfig.swcrc = false;
 
 export default {
-  displayName: '@anticheat-interview/tracker-electron',
+  displayName: '@fairhire/tracker-electron',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

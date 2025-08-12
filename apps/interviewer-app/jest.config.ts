@@ -1,5 +1,5 @@
 export default {
-  displayName: '@anticheat-interview/interviewer-app',
+  displayName: '@fairhire/interviewer-app',
   preset: '../../jest.preset.js',
   transform: {
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nx/react/plugins/jest',
