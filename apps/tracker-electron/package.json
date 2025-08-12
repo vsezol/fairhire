@@ -1,6 +1,7 @@
 {
   "name": "@anticheat-interview/tracker-electron",
-  "version": "0.0.22",
+  "version": "1.0.0",
+  "license": "PolyForm-Internal-Use-1.0.0",
   "private": true,
   "type": "module",
   "main": "dist/main.js",

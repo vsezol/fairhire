@@ -1,19 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://jjhwsunzneimcnkybbnv.supabase.co';
-const supabaseAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqaHdzdW56bmVpbWNua3liYm52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3ODc3MDQsImV4cCI6MjA2OTM2MzcwNH0.JnLvWb8_nM3_ufLQ_JoS5PIrrC99pgBl3K-75Lpl_QI';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: false,
     },
-  },
-});
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  }
+);
 
 // Типы геометрии
 export interface ScreenGeometry {

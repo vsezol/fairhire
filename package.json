@@ -1,7 +1,7 @@
 {
   "name": "@anticheat-interview/source",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "PolyForm-Internal-Use-1.0.0",
   "scripts": {
     "*** INTERVIEWER ***": "",
     "interviewer:dev": "nx run interviewer-app:serve:development",

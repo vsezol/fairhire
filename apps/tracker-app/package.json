@@ -1,6 +1,7 @@
 {
   "name": "@anticheat-interview/tracker-app",
   "version": "0.0.1",
+  "license": "PolyForm-Internal-Use-1.0.0",
   "private": true,
   "nx": {
     "targets": {
