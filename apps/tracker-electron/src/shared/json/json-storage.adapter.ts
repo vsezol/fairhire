@@ -4,6 +4,7 @@ import {
   ActivitySession,
 } from '../../features/activity-tracking/types.js';
 import { BaseStorageAdapter } from '../../features/activity-tracking/storage-adapter.interface.js';
+import { APP_VERSION } from '../../version.js';
 
 export interface JsonStorageConfig {
   outputPath: string;
@@ -210,7 +211,7 @@ export class JsonStorageAdapter extends BaseStorageAdapter {
         savedAt: new Date().toISOString(),
         duration: session.endTime ? session.endTime - session.startTime : 0,
         platform: process.platform,
-        appVersion: process.env.npm_package_version || '0.0.0',
+        appVersion: APP_VERSION,
       };
 
       await fs.writeFile(

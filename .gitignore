@@ -51,3 +51,5 @@ vitest.config.*.timestamp*
 release
 dist-electron
 .vercel
+
+env.ts

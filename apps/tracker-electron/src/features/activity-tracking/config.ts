@@ -1,9 +1,10 @@
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../env.js';
 import { SupabaseConfig } from '../../shared/db/supabase.client.js';
 
 export const getSupabaseConfig = (): SupabaseConfig => {
   return {
-    url: process.env.SUPABASE_URL!,
-    anonKey: process.env.SUPABASE_ANON_KEY!,
+    url: SUPABASE_URL,
+    anonKey: SUPABASE_ANON_KEY,
   };
 };
 

@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, session } from 'electron';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createRequire } from 'module';
 import {
   VideoCallStrategy,
   VideoCallStrategyFactory,
@@ -12,9 +11,7 @@ import {
 } from './features/activity-tracking/index.js';
 import { screenshotProtectionService } from './features/screenshot-protection/index.js';
 import { KeyDownEvent } from './preload.js';
-
-const require = createRequire(import.meta.url);
-const packageJson = require('../package.json');
+import { APP_VERSION } from './version.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -499,5 +496,5 @@ app.on('web-contents-created', (event, contents) => {
 });
 
 function titleWithVersion(title: string): string {
-  return `${title} ${packageJson.version}`;
+  return `${title} ${APP_VERSION}`;
 }

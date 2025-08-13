@@ -1,6 +1,6 @@
 {
   "name": "@fairhire/tracker-electron",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "PolyForm-Internal-Use-1.0.0",
   "private": true,
   "type": "module",
@@ -73,11 +73,7 @@
         }
       ],
       "background": null,
-      "title": "Install ${productName}",
-      "window": {
-        "width": 540,
-        "height": 480
-      }
+      "title": "Install ${productName}"
     },
     "win": {
       "icon": "assets/icon.ico",
