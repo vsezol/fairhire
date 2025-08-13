@@ -1,0 +1,34 @@
+ВАЖНО: Инструкция для пользователей macOS
+
+После установки приложения FairHire необходимо выполнить следующую команду в Терминале:
+
+sudo xattr -r -c /Applications/FairHire.app
+
+Эта команда удаляет расширенные атрибуты macOS, которые могут препятствовать нормальной работе приложения.
+
+Как выполнить команду:
+1. Откройте Терминал (Приложения → Утилиты → Терминал)
+2. Скопируйте и вставьте команду: sudo xattr -r -c /Applications/FairHire.app
+3. Нажмите Enter
+4. Введите пароль администратора при запросе
+5. Теперь можно запускать FairHire
+
+Если у вас возникли проблемы с установкой или запуском приложения, обратитесь в службу поддержки.
+
+---
+IMPORTANT: Instructions for macOS Users
+
+After installing the FairHire application, you need to run the following command in Terminal:
+
+sudo xattr -r -c /Applications/FairHire.app
+
+This command removes macOS extended attributes that may prevent the application from running properly.
+
+How to run the command:
+1. Open Terminal (Applications → Utilities → Terminal)
+2. Copy and paste the command: sudo xattr -r -c /Applications/FairHire.app
+3. Press Enter
+4. Enter your administrator password when prompted
+5. You can now launch FairHire
+
+If you encounter any issues with installation or running the application, please contact support.
