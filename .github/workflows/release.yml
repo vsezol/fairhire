@@ -1,0 +1,102 @@
+---
+name: CI Build Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-linux-win:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Insert env.ts
+        run: |
+          cat << EOF > apps/tracker-electron/src/env.ts
+          export const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
+          export const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
+          EOF
+
+      - name: Install node dependencies
+        run: npm install
+
+      - name: Install apk for Linux release
+        run: |
+          sudo apt-get update
+          sudo apt-get install xvfb -y
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install wine64 wine32:i386 wine32 wine64 libwine:i386 wine -y
+
+      - name: Run Linux release
+        run: NX_NO_CLOUD=true npm run tracker:release:linux
+
+      - name: Run Windows release with xvfb
+        run: NX_NO_CLOUD=true xvfb-run npm run tracker:release:win
+
+      - name: Show all release
+        run: ls -la release/
+
+      - name: Create or update release
+        run: |
+          gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --notes "Automated release" || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} release/FairHire*.exe
+          gh release upload ${{ github.ref_name }} release/FairHire*.AppImage
+
+  build-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Insert env.ts
+        run: |
+          cat << EOF > apps/tracker-electron/src/env.ts
+          export const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
+          export const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
+          EOF
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Linux release on macOS
+        run: NX_NO_CLOUD=true npm run tracker:release:mac
+
+      - name: Show all release
+        run: ls -la release/
+
+      - name: Create or update release
+        run: |
+          gh release create ${{ github.ref_name }} --title "Release ${{ github.ref_name }}" --notes "Automated release" || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} release/FairHire*.dmg
