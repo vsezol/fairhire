@@ -1,6 +1,6 @@
 {
   "name": "@fairhire/tracker-electron",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "PolyForm-Internal-Use-1.0.0",
   "private": true,
   "type": "module",
@@ -85,6 +85,33 @@
           ]
         }
       ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "snap",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "synopsis": "FairHire",
+      "category": "Development"
     },
     "nsis": {
       "oneClick": false,
@@ -174,6 +201,12 @@
           "win": {
             "commands": [
               "electron-builder --win --publish=never"
+            ]
+          },
+          "linux": {
+            "commands": [
+              "mkdir -p ../../release/@fairhire",
+              "electron-builder --linux --publish=never"
             ]
           }
         }
