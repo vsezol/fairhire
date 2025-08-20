@@ -9,6 +9,7 @@ on:
 jobs:
   build-linux-win:
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: write
     steps:
@@ -62,6 +63,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    environment: prod
     permissions:
       contents: write
     steps:
