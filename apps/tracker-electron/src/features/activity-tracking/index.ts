@@ -1,4 +1,4 @@
-export * from './storage-adapter.interface.js';
+export * from './storage/storage-adapter.interface.js';
 export * from './unified-activity-tracker.js';
 export * from './config.js';
 
@@ -9,4 +9,4 @@ export {
   createSmartAutoAdapter,
   createStorageAdapter,
   StorageType,
-} from './storage-factory.js';
+} from './storage/storage-factory.js';

@@ -26,6 +26,7 @@
     "daisyui": "^4.12.10",
     "electron": "37.2.4",
     "electron-builder": "^26.0.12",
+    "find-process": "^2.0.0",
     "i18next": "^23.7.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",

@@ -3,7 +3,7 @@ import {
   ActivityEvent,
   ActivitySession,
 } from '../../features/activity-tracking/types.js';
-import { BaseStorageAdapter } from '../../features/activity-tracking/storage-adapter.interface.js';
+import { BaseStorageAdapter } from '../../features/activity-tracking/index.js';
 import { DatabaseSession, DatabaseUserActivity } from './supabase.types.js';
 import { initializeSupabaseClient, SupabaseConfig } from './supabase.client.js';
 import { app } from 'electron';
@@ -76,6 +76,11 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         window_height: session.geometry?.window.height,
         window_is_visible: session.geometry?.window.isVisible,
         window_is_focused: session.geometry?.window.isFocused,
+        processes: session.processes.map((process) => ({
+          name: process.name,
+          isSuspicious: process.isSuspicious,
+          isApplication: process.isApplication,
+        })),
       };
 
       const { error } = await this.client.from('sessions').insert(sessionData);
@@ -114,6 +119,11 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         window_height: session.geometry?.window.height,
         window_is_visible: session.geometry?.window.isVisible,
         window_is_focused: session.geometry?.window.isFocused,
+        processes: session.processes.map((process) => ({
+          name: process.name,
+          isSuspicious: process.isSuspicious,
+          isApplication: process.isApplication,
+        })),
       };
 
       const { error } = await this.client

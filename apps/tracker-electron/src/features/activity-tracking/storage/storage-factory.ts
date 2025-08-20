@@ -3,12 +3,12 @@ import { StorageAdapter } from './storage-adapter.interface.js';
 import {
   JsonStorageAdapter,
   JsonStorageConfig,
-} from '../../shared/json/index.js';
+} from '../../../shared/json/index.js';
 import {
   SupabaseStorageAdapter,
   SupabaseStorageConfig,
-} from '../../shared/db/index.js';
-import { getSupabaseConfig, validateSupabaseConfig } from './config.js';
+} from '../../../shared/db/index.js';
+import { getSupabaseConfig, validateSupabaseConfig } from './../config.js';
 
 // Фабричная функция для JSON адаптера
 export function createJsonAdapter(outputPath?: string): StorageAdapter {

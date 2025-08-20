@@ -22,6 +22,7 @@ export interface DatabaseSession {
   window_is_focused?: boolean;
   created_at: string;
   updated_at: string;
+  processes: DatabaseProcess[];
 }
 
 export interface DatabaseUserActivity {
@@ -31,4 +32,10 @@ export interface DatabaseUserActivity {
   timestamp: number;
   event_data: ActivityEvent['data'];
   created_at: string;
+}
+
+export interface DatabaseProcess {
+  name: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
 }

@@ -1,4 +1,4 @@
-import { ActivityEvent, ActivitySession } from './types';
+import { ActivityEvent, ActivitySession } from '../types.js';
 
 // Интерфейс для адаптеров сохранения
 export interface StorageAdapter {

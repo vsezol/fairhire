@@ -58,6 +58,32 @@ export interface SessionGeometry {
   window: WindowGeometry;
 }
 
+// Новые типы для отслеживания приложений
+export interface ProcessInfo {
+  name: string;
+  cmd: string;
+  bin?: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+export interface ProcessStartData {
+  name: string;
+  cmd: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+
+export interface ProcessEndData {
+  name: string;
+  cmd: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+
+export interface ProcessSnapshotData {
+  processes: ProcessInfo[];
+}
+
 // Union type для всех событий активности
 export type ActivityEvent =
   | { type: 'mouse_move'; timestamp: number; data: MouseMoveData }
@@ -74,7 +100,9 @@ export type ActivityEvent =
       type: 'screenshot_attempt';
       timestamp: number;
       data: ScreenshotAttemptData;
-    };
+    }
+  | { type: 'process_start'; timestamp: number; data: ProcessStartData }
+  | { type: 'process_end'; timestamp: number; data: ProcessEndData };
 
 export interface ActivitySession {
   sessionId: string;
@@ -83,4 +111,5 @@ export interface ActivitySession {
   callUrl?: string;
   totalEvents: number;
   geometry?: SessionGeometry;
+  processes: ProcessInfo[];
 }

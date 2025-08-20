@@ -3,8 +3,8 @@ import {
   ActivityEvent,
   ActivitySession,
 } from '../../features/activity-tracking/types.js';
-import { BaseStorageAdapter } from '../../features/activity-tracking/storage-adapter.interface.js';
 import { APP_VERSION } from '../../version.js';
+import { BaseStorageAdapter } from '../../features/activity-tracking/index.js';
 
 export interface JsonStorageConfig {
   outputPath: string;

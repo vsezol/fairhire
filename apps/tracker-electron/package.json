@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "uuid": "^11.1.0",
-    "@supabase/supabase-js": "^2.45.4"
+    "@supabase/supabase-js": "^2.45.4",
+    "find-process": "^2.0.0"
   },
   "build": {
     "appId": "com.fairhire",

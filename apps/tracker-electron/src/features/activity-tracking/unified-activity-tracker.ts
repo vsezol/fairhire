@@ -1,6 +1,6 @@
 import { v7 } from 'uuid';
 import { app, BrowserWindow, globalShortcut, screen } from 'electron';
-import { StorageAdapter } from './storage-adapter.interface.js';
+
 import {
   ActivitySession,
   MouseMoveData,
@@ -11,7 +11,12 @@ import {
   WindowGeometry,
   ScreenGeometry,
   KeyDownEventData,
+  ProcessStartData,
+  ProcessEndData,
+  ProcessSnapshotData,
 } from './types.js';
+import { ProcessTracker } from './process-tracking/process-tracker.js';
+import { StorageAdapter } from './storage/storage-adapter.interface.js';
 
 export class UnifiedActivityTracker {
   private session: ActivitySession | null = null;
@@ -24,9 +29,60 @@ export class UnifiedActivityTracker {
   private geometryUpdateInterval: NodeJS.Timeout | null = null;
   private targetWindow: BrowserWindow | null = null;
   private lastKeyDownEvent: KeyDownEventData | null = null;
+  private processTracker: ProcessTracker | null = null;
 
   constructor(private storageAdapter: StorageAdapter) {
     this.setupGlobalEventListeners();
+    this.initializeProcessTracker();
+  }
+
+  private initializeProcessTracker(): void {
+    this.processTracker = new ProcessTracker(
+      {},
+      (event) => this.handleProcessEvent(event),
+      (data) => this.handleProcessSnapshot(data)
+    );
+  }
+
+  private handleProcessEvent(event: {
+    type: 'start' | 'end';
+    data: ProcessStartData | ProcessEndData;
+  }): void {
+    if (!this.isTracking || !this.session) return;
+
+    const timestamp = Date.now();
+
+    switch (event.type) {
+      case 'start':
+        this.addEventToSession({
+          type: 'process_start',
+          timestamp,
+          data: event.data as ProcessStartData,
+        });
+        break;
+
+      case 'end':
+        this.addEventToSession({
+          type: 'process_end',
+          timestamp,
+          data: event.data as ProcessEndData,
+        });
+        break;
+    }
+  }
+
+  private async handleProcessSnapshot(
+    data: ProcessSnapshotData
+  ): Promise<void> {
+    if (!this.isTracking || !this.session) return;
+
+    this.session.processes = data.processes;
+
+    try {
+      await this.storageAdapter.updateSession(this.session);
+    } catch (error) {
+      console.error('❌ Failed to update session:', error);
+    }
   }
 
   public async initialize(): Promise<void> {
@@ -62,6 +118,7 @@ export class UnifiedActivityTracker {
       callUrl,
       totalEvents: 0,
       geometry,
+      processes: [],
     };
 
     // Создаем сессию в хранилище
@@ -74,6 +131,11 @@ export class UnifiedActivityTracker {
     this.startMouseTracking();
     this.startGeometryMonitoring();
     this.registerScreenshotShortcuts();
+
+    // Запускаем отслеживание процессов
+    if (this.processTracker) {
+      await this.processTracker.startTracking();
+    }
 
     console.log(`🎯 Activity tracking started: ${this.session.sessionId}`);
   }
@@ -113,10 +175,22 @@ export class UnifiedActivityTracker {
       `🛑 Activity tracking stopped: ${this.session.sessionId}, events: ${this.session.totalEvents}`
     );
     this.session = null;
+
+    // Останавливаем отслеживание процессов
+    if (this.processTracker) {
+      await this.processTracker.stopTracking();
+    }
   }
 
   public async destroy(): Promise<void> {
     await this.stopTracking();
+
+    // Очищаем процесс трекер
+    if (this.processTracker) {
+      await this.processTracker.stopTracking();
+      this.processTracker = null;
+    }
+
     this.unregisterScreenshotShortcuts();
     await this.storageAdapter.destroy();
   }
