@@ -8,7 +8,6 @@ export const suspiciousProcesses = [
   'whatsapp',
   'viber',
   'signal',
-  'wire',
   'element',
   // Browsers
   'chrome',
@@ -19,9 +18,7 @@ export const suspiciousProcesses = [
   'brave',
   'vivaldi',
   'yandex',
-  'tor',
   // AI assistants and chatbots
-  'gpt',
   'chatgpt',
   'claude',
   'bard',
@@ -82,19 +79,7 @@ export const suspiciousProcesses = [
   'jump desktop',
   // Virtual machines and containers
   'virtualbox',
-  'vmware',
   'parallels',
-  'qemu',
-  'docker',
-  'podman',
-  'lxc',
-  'lxd',
-  'vagrant',
-  'multipass',
-  'utm',
-  'proxmox',
-  'citrix',
-  'hyper-v',
 ];
 
 export const systemProcessesPatterns = [

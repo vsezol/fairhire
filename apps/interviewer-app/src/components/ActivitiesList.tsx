@@ -2,6 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   isKeyDownActivity,
+  isProcessEndActivity,
+  isProcessStartActivity,
   KeyDownEventData,
   UserActivity,
 } from '../services/supabase';
@@ -35,18 +37,32 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
   };
 
   // Filter out mouse movement events
-  const filteredActivities = activities.filter((activity) =>
-    [
-      'app_focus',
-      'app_blur',
-      'app_hide',
-      'app_show',
-      'app_open',
-      'app_close',
-      'key_down',
-      'screenshot_attempt',
-    ].includes(activity.event_type)
-  );
+  const filteredActivities = activities
+    .filter((activity) =>
+      [
+        'app_focus',
+        'app_blur',
+        'app_hide',
+        'app_show',
+        'app_open',
+        'app_close',
+        'key_down',
+        'screenshot_attempt',
+        'process_start',
+        'process_end',
+      ].includes(activity.event_type)
+    )
+    .filter((activity) => {
+      if (isProcessStartActivity(activity)) {
+        return activity.event_data.isSuspicious;
+      }
+
+      if (isProcessEndActivity(activity)) {
+        return activity.event_data.isSuspicious;
+      }
+
+      return true;
+    });
 
   if (loading) {
     return (
@@ -121,9 +137,15 @@ function ActivityText({
   return (
     <div className="min-w-0 flex-1">
       <div className="font-medium text-sm">
-        {!isKeyDownActivity(activity) ? (
-          t(`activities.events.${activity.event_type}`)
-        ) : (
+        {isProcessStartActivity(activity) ? (
+          t(`activities.events.${activity.event_type}`, {
+            name: activity.event_data.name,
+          })
+        ) : isProcessEndActivity(activity) ? (
+          t(`activities.events.${activity.event_type}`, {
+            name: activity.event_data.name,
+          })
+        ) : isKeyDownActivity(activity) ? (
           <div className="flex items-center gap-1">
             {formatKeyboardShortcut(activity.event_data, platform).map(
               (key, index, array) => (
@@ -136,6 +158,8 @@ function ActivityText({
               )
             )}
           </div>
+        ) : (
+          t(`activities.events.${activity.event_type}`)
         )}
       </div>
     </div>
@@ -188,6 +212,10 @@ function isSuspiciousEvent(event: UserActivity, platform: string) {
       isPasteCombination(event.event_data, platform) ||
       false
     );
+  }
+
+  if (isProcessStartActivity(event)) {
+    return event.event_data.isSuspicious;
   }
 
   return false;

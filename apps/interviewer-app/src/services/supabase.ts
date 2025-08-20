@@ -60,6 +60,7 @@ export interface Session {
   updated_at: string;
   // Вычисляемое поле геометрии
   geometry?: SessionGeometry;
+  processes?: ProcessInfo[];
 }
 
 // Типы для различных событий
@@ -99,6 +100,20 @@ export interface KeyDownEventData {
   meta: boolean;
 }
 
+export interface ProcessStartData {
+  name: string;
+  cmd: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+
+export interface ProcessEndData {
+  name: string;
+  cmd: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+
 // Union тип для всех возможных event_data
 export type EventData =
   | MouseEventData
@@ -106,6 +121,8 @@ export type EventData =
   | WindowEventData
   | AppEventData
   | KeyDownEventData
+  | ProcessStartData
+  | ProcessEndData
   | Record<string, unknown>;
 
 export interface UserActivity {
@@ -122,3 +139,27 @@ export const isKeyDownActivity = (
 ): event is UserActivity & { event_data: KeyDownEventData } => {
   return event.event_type === 'key_down';
 };
+
+export const isProcessStartActivity = (
+  event: UserActivity
+): event is UserActivity & { event_data: ProcessStartData } => {
+  return event.event_type === 'process_start';
+};
+
+export const isProcessEndActivity = (
+  event: UserActivity
+): event is UserActivity & { event_data: ProcessEndData } => {
+  return event.event_type === 'process_end';
+};
+
+// Типы для процессов
+export interface ProcessInfo {
+  name: string;
+  isSuspicious: boolean;
+  isApplication: boolean;
+}
+
+// Расширяем Session для включения процессов
+export interface SessionWithProcesses extends Session {
+  processes?: ProcessInfo[];
+}

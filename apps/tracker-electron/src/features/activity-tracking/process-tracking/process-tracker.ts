@@ -123,8 +123,6 @@ export class ProcessTracker {
         return getPriority(b) - getPriority(a);
       });
 
-      console.log('filteredProcesses', filteredProcesses);
-
       this.lastProcesses.clear();
       filteredProcesses.forEach((proc) => {
         this.lastProcesses.set(proc.name, proc);

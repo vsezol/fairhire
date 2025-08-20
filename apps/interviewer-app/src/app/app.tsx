@@ -4,6 +4,7 @@ import { UrlInput } from '../components/UrlInput';
 import { SessionsList } from '../components/SessionsList';
 import { ActivitiesList } from '../components/ActivitiesList';
 import { MouseTracker } from '../components/MouseTracker';
+import { RunningApps } from '../components/RunningApps';
 import { useSessions } from '../hooks/useSessions';
 import { useActivities } from '../hooks/useActivities';
 import { GlobeIcon } from '../components/icons';
@@ -83,7 +84,7 @@ export function App() {
 
         {/* Activities and Mouse Tracking */}
         {selectedSessionId && (
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-8 mb-8">
             <div className="lg:max-w-96">
               <ActivitiesList
                 activities={activities}
@@ -95,6 +96,13 @@ export function App() {
             <div className="lg:w-100">
               <MouseTracker activities={activities} session={selectedSession} />
             </div>
+          </div>
+        )}
+
+        {/* Running Applications */}
+        {selectedSessionId && (
+          <div className="mb-8">
+            <RunningApps processes={selectedSession?.processes || []} />
           </div>
         )}
       </div>
