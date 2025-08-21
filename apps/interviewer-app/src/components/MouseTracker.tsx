@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserActivity, Session } from '../services/supabase';
+import { AlertTriangleIcon } from './icons';
 
 interface MouseTrackerProps {
   activities: UserActivity[];
@@ -346,6 +347,16 @@ export const MouseTracker: React.FC<MouseTrackerProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">{t('mouseTracking.title')}</h3>
+          <span className="text-lg font-semibold">|</span>
+          <h3 className={`text-lg font-semibold flex items-center gap-2`}>
+            {t('mouseTracking.monitors')}
+            <span className="font-bold flex items-center gap-1">
+              <span className="text-warning">{session?.display_count}</span>
+              {session?.display_count && session.display_count > 1 && (
+                <AlertTriangleIcon className="w-4 h-4 text-warning" />
+              )}
+            </span>
+          </h3>
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">

@@ -90,7 +90,8 @@ const resources = {
         },
       },
       mouseTracking: {
-        title: 'Движение мыши и клики',
+        title: 'Главный экран',
+        monitors: 'Всего мониторов: ',
         leftClick: 'Левый клик',
         rightClick: 'Правый клик',
         movement: 'Путь движения',

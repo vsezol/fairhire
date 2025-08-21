@@ -6,14 +6,16 @@ import {
   isProcessStartActivity,
   KeyDownEventData,
   UserActivity,
+  Session,
 } from '../services/supabase';
-import { AlertTriangleIcon } from './icons';
+import { AlertTriangleIcon, MonitorIcon } from './icons';
 
 interface ActivitiesListProps {
   activities: UserActivity[];
   loading: boolean;
   error: string | null;
   platform: string;
+  session?: Session | null;
 }
 
 export const ActivitiesList: React.FC<ActivitiesListProps> = ({
@@ -21,6 +23,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
   loading,
   error,
   platform,
+  session,
 }) => {
   const { t } = useTranslation();
 
@@ -64,6 +67,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
       return true;
     });
 
+  const hasMultipleMonitors = session && session.display_count > 1;
+
   if (loading) {
     return (
       <div className="flex justify-center py-4">
@@ -94,6 +99,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t('activities.title')}</h3>
       </div>
+
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {filteredActivities.map((activity) => {
           return (

@@ -34,6 +34,7 @@ export interface WindowGeometry {
 export interface SessionGeometry {
   screen: ScreenGeometry;
   window: WindowGeometry;
+  displayCount: number;
 }
 
 export interface Session {
@@ -58,6 +59,7 @@ export interface Session {
   window_is_focused?: boolean;
   created_at: string;
   updated_at: string;
+  display_count: number;
   // Вычисляемое поле геометрии
   geometry?: SessionGeometry;
   processes?: ProcessInfo[];

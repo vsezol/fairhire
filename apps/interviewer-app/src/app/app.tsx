@@ -91,6 +91,7 @@ export function App() {
                 loading={activitiesLoading}
                 error={activitiesError}
                 platform={selectedSession?.platform || ''}
+                session={selectedSession}
               />
             </div>
             <div className="lg:w-100">

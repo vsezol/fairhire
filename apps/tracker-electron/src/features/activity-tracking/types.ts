@@ -56,6 +56,7 @@ export interface ScreenGeometry {
 export interface SessionGeometry {
   screen: ScreenGeometry;
   window: WindowGeometry;
+  displayCount: number;
 }
 
 // Новые типы для отслеживания приложений

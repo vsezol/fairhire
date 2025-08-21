@@ -359,6 +359,7 @@ export class UnifiedActivityTracker {
       return {
         screen: screenGeometry,
         window: windowGeometry,
+        displayCount: screen.getAllDisplays().length || 1,
       };
     } catch (error) {
       console.error('❌ Error getting session geometry:', error);

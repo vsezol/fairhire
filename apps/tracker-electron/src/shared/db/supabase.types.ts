@@ -20,6 +20,7 @@ export interface DatabaseSession {
   window_height?: number;
   window_is_visible?: boolean;
   window_is_focused?: boolean;
+  display_count: number;
   created_at: string;
   updated_at: string;
   processes: DatabaseProcess[];

@@ -76,6 +76,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
         window_height: session.geometry?.window.height,
         window_is_visible: session.geometry?.window.isVisible,
         window_is_focused: session.geometry?.window.isFocused,
+        display_count: session.geometry?.displayCount || 0,
         processes: session.processes.map((process) => ({
           name: process.name,
           isSuspicious: process.isSuspicious,

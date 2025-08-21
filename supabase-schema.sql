@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   window_is_focused BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  display_count INTEGER DEFAULT 0,
   processes JSONB
 );
 

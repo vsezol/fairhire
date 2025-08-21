@@ -1,7 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Session } from '../services/supabase';
-import { ClockIcon, ActivityIcon } from './icons';
+import {
+  ClockIcon,
+  ActivityIcon,
+  MonitorIcon,
+  AlertTriangleIcon,
+} from './icons';
 
 interface SessionCardProps {
   session: Session;
@@ -22,6 +27,8 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   const formatDate = (updated_at: string) => {
     return new Date(updated_at).toLocaleString('ru-RU');
   };
+
+  const hasMultipleMonitors = session.display_count > 1;
 
   return (
     <div
@@ -49,9 +56,21 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               </>
             )}
           </div>
-          <div className="flex items-center gap-1 text-sm text-base-content/60">
-            <ActivityIcon className="w-4 h-4" />
-            {session.total_events}
+          <div className="flex items-center gap-3">
+            {/* Monitor count */}
+            <div
+              className={`flex items-center gap-1 text-sm ${
+                hasMultipleMonitors ? 'text-warning' : 'text-base-content/60'
+              }`}
+            >
+              <MonitorIcon className="w-4 h-4" />
+              <span>{session.display_count}</span>
+            </div>
+            {/* Activity count */}
+            <div className="flex items-center gap-1 text-sm text-base-content/60">
+              <ActivityIcon className="w-4 h-4" />
+              {session.total_events}
+            </div>
           </div>
         </div>
 
