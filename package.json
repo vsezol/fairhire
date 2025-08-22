@@ -50,7 +50,7 @@
     "@nx/nest": "21.3.7",
     "@nx/node": "21.3.7",
     "@nx/playwright": "21.3.7",
-    "@nx/react": "^20.1.4",
+    "@nx/react": "^21.4.0",
     "@nx/vite": "21.3.7",
     "@nx/web": "21.3.7",
     "@nx/webpack": "21.3.7",
