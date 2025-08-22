@@ -1,4 +1,5 @@
 import { ActivityEvent } from '../../features/activity-tracking/types';
+import { SystemResourceInfo } from '../../features/vm-detection/vm-detection.service';
 
 export interface DatabaseSession {
   id: string;
@@ -24,6 +25,9 @@ export interface DatabaseSession {
   created_at: string;
   updated_at: string;
   processes: DatabaseProcess[];
+  is_virtual: boolean;
+  virtual_host?: string;
+  system_resources?: SystemResourceInfo;
 }
 
 export interface DatabaseUserActivity {

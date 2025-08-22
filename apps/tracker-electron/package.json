@@ -1,6 +1,6 @@
 {
   "name": "@fairhire/tracker-electron",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "PolyForm-Internal-Use-1.0.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,10 @@
     "email": "vsezold@gmail.com"
   },
   "dependencies": {
-    "uuid": "^11.1.0",
     "@supabase/supabase-js": "^2.45.4",
-    "find-process": "^2.0.0"
+    "find-process": "^2.0.0",
+    "systeminformation": "^5.27.7",
+    "uuid": "^11.1.0"
   },
   "build": {
     "appId": "com.fairhire",

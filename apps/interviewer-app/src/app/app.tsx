@@ -5,6 +5,7 @@ import { SessionsList } from '../components/SessionsList';
 import { ActivitiesList } from '../components/ActivitiesList';
 import { MouseTracker } from '../components/MouseTracker';
 import { RunningApps } from '../components/RunningApps';
+import { SystemInfo } from '../components/SystemInfo';
 import { useSessions } from '../hooks/useSessions';
 import { useActivities } from '../hooks/useActivities';
 import { GlobeIcon } from '../components/icons';
@@ -98,6 +99,16 @@ export function App() {
               <MouseTracker activities={activities} session={selectedSession} />
             </div>
           </div>
+        )}
+
+        {/* System Information */}
+        {selectedSessionId && (
+          <SystemInfo
+            systemResources={selectedSession?.system_resources}
+            displayCount={selectedSession?.display_count || 1}
+            isVirtual={true}
+            virtualHost={`VirtualBox`}
+          />
         )}
 
         {/* Running Applications */}

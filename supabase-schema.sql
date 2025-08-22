@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   display_count INTEGER DEFAULT 0,
-  processes JSONB
+  processes JSONB,
+  is_virtual BOOLEAN DEFAULT FALSE,
+  virtual_host TEXT,
+  system_resources JSONB
 );
 
 CREATE TABLE IF NOT EXISTS user_activities (

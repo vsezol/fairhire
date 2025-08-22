@@ -82,6 +82,9 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
           isSuspicious: process.isSuspicious,
           isApplication: process.isApplication,
         })),
+        is_virtual: session.isVirtual || false,
+        virtual_host: session.virtualHost,
+        system_resources: session.systemResources,
       };
 
       const { error } = await this.client.from('sessions').insert(sessionData);
@@ -125,6 +128,7 @@ export class SupabaseStorageAdapter extends BaseStorageAdapter {
           isSuspicious: process.isSuspicious,
           isApplication: process.isApplication,
         })),
+        system_resources: session.systemResources,
       };
 
       const { error } = await this.client

@@ -17,6 +17,10 @@ import {
 } from './types.js';
 import { ProcessTracker } from './process-tracking/process-tracker.js';
 import { StorageAdapter } from './storage/storage-adapter.interface.js';
+import {
+  SystemResourceInfo,
+  VMDetectionService,
+} from '../vm-detection/vm-detection.service.js';
 
 export class UnifiedActivityTracker {
   private session: ActivitySession | null = null;
@@ -112,6 +116,32 @@ export class UnifiedActivityTracker {
     // Получаем геометрию сессии
     const geometry = this.getSessionGeometry();
 
+    // Детекция виртуальной машины
+    let isVirtual = false;
+    let virtualHost: string | undefined;
+    let systemResources: SystemResourceInfo | undefined;
+
+    try {
+      const vmDetectionService = VMDetectionService.getInstance();
+      const vmResult = await vmDetectionService.detectVM();
+      isVirtual = vmResult.isVirtual;
+      virtualHost = vmResult.virtualHost;
+      systemResources = vmResult.systemResources;
+      console.log(
+        `🖥️ VM Detection: ${
+          isVirtual ? 'Virtual' : 'Physical'
+        } machine detected via ${vmResult.detectionMethod}${
+          virtualHost ? ` (${virtualHost})` : ''
+        }`,
+        systemResources
+      );
+    } catch (error) {
+      console.warn(
+        '⚠️ VM Detection failed, defaulting to physical machine:',
+        error
+      );
+    }
+
     this.session = {
       sessionId: v7(),
       startTime: Date.now(),
@@ -119,6 +149,9 @@ export class UnifiedActivityTracker {
       totalEvents: 0,
       geometry,
       processes: [],
+      isVirtual,
+      virtualHost,
+      systemResources,
     };
 
     // Создаем сессию в хранилище

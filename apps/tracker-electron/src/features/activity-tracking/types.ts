@@ -1,3 +1,5 @@
+import { SystemResourceInfo } from '../vm-detection/vm-detection.service';
+
 // Типы данных для каждого события
 export interface MouseMoveData {
   x: number;
@@ -113,4 +115,7 @@ export interface ActivitySession {
   totalEvents: number;
   geometry?: SessionGeometry;
   processes: ProcessInfo[];
+  isVirtual?: boolean;
+  virtualHost?: string;
+  systemResources?: SystemResourceInfo;
 }

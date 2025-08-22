@@ -60,9 +60,12 @@ export interface Session {
   created_at: string;
   updated_at: string;
   display_count: number;
+  is_virtual?: boolean;
+  virtual_host?: string;
   // Вычисляемое поле геометрии
   geometry?: SessionGeometry;
   processes?: ProcessInfo[];
+  system_resources?: SystemResourceInfo;
 }
 
 // Типы для различных событий
@@ -114,6 +117,12 @@ export interface ProcessEndData {
   cmd: string;
   isSuspicious: boolean;
   isApplication: boolean;
+}
+
+export interface SystemResourceInfo {
+  diskSpaceGB: number;
+  ramGB: number;
+  cpuCores: number;
 }
 
 // Union тип для всех возможных event_data
