@@ -38,7 +38,7 @@
     "systeminformation": "^5.27.7"
   },
   "devDependencies": {
-    "@eslint/js": "^9.8.0",
+    "@eslint/js": "^9.33.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@nx/devkit": "21.3.7",
