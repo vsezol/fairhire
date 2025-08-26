@@ -106,8 +106,8 @@ export function App() {
           <SystemInfo
             systemResources={selectedSession?.system_resources}
             displayCount={selectedSession?.display_count || 1}
-            isVirtual={true}
-            virtualHost={`VirtualBox`}
+            isVirtual={selectedSession?.is_virtual}
+            virtualHost={selectedSession?.virtual_host || ''}
           />
         )}
 
